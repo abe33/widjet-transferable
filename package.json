@@ -1,0 +1,49 @@
+{
+  "name": "widjet-transferable",
+  "version": "0.0.0",
+  "description": "A drag and drop widget for widjet",
+  "main": "lib/index.js",
+  "scripts": {
+    "test": "mocha --recursive --compilers js:babel-register test/**/*.es6 test/*.es6",
+    "babel": "babel src --out-dir lib",
+    "standard": "standard src/*.es6 test/*.es6",
+    "esdoc": "esdoc -c esdoc.json",
+    "install": "npm run babel"
+  },
+  "keywords": ["widgets", "widget", "web", "widjet", "drag-and-drop", "transferable"],
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/abe33/widjet-transferable.git"
+  },
+  "bugs": "http://github.com/abe33/widjet-transferable/issues",
+  "commits": "http://github.com/abe33/widjet-transferable/commits",
+  "author": "Cédric Néhémie <cedric.nehemie@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "babel-eslint": "^4.1.6",
+    "babel-register": "^6.3.13",
+    "esdoc": "^0.4.0",
+    "expect.js": "^0.3.1",
+    "mocha": "^2.3.4",
+    "mocha-jsdom": "^1.1.0",
+    "sinon": "^1.17.4",
+    "standard": "^5.4.1"
+  },
+  "dependencies": {
+    "babel-cli": "^6.3.17",
+    "babel-preset-es2015": "^6.3.13",
+    "widjet": "*"
+  },
+  "standard": {
+    "parser": "babel-eslint",
+    "globals": [
+      "it",
+      "describe",
+      "beforeEach",
+      "afterEach"
+    ]
+  },
+  "babel": {
+    "presets": ["es2015"]
+  }
+}
