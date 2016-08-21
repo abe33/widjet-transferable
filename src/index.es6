@@ -187,7 +187,7 @@ widgets.define('drag-source', (el, options = {}) => {
     dragged.style.top = y + 'px'
   }
 
-  grip.addEventListener('mousedown', (e) => {
+  return new DisposableEvent(grip, 'mousedown', (e) => {
     e.stopImmediatePropagation()
     e.stopPropagation()
     e.preventDefault()
