@@ -45,10 +45,12 @@ describe('drag source', () => {
     dragged = document.querySelector('.dragged')
   }
 
-  function dragOver (target, offsets = {x: 0, y: 0}) {
-    const coords = objectCenterCoordinates(target)
-    coords.x += offsets.x
-    coords.y += offsets.y
+  function dragOver (target, offsets = {}) {
+    const center = objectCenterCoordinates(target)
+    const coords = {
+      x: offsets.x != null ? offsets.x : center.x,
+      y: offsets.y != null ? offsets.y : center.y
+    }
 
     mousemove(dragged, coords)
     mouseover(target, coords)
