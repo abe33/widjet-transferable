@@ -2,6 +2,7 @@ import expect from 'expect.js'
 import sinon from 'sinon'
 import jsdom from 'mocha-jsdom'
 import widgets from 'widjet'
+import {nodeIndex} from 'widjet-utils'
 
 import {asDataAttrs} from './helpers/utils'
 import {mousedown, mousemove, mouseup, mouseover, mouseout, objectCenterCoordinates} from './helpers/events'
@@ -38,6 +39,56 @@ describe('drag source', () => {
   function getPlaceholder () {
     return dropTarget.querySelector('.dnd-placeholder')
   }
+
+  function getBox (top, left, width, height) {
+    return {
+      top, left,
+      width, height,
+      right: top + width,
+      bottom: top + height
+    }
+  }
+
+  function withFakeBoundingClientRects (mode) {
+    let safeGetBoundingClientRect
+    beforeEach(() => {
+      safeGetBoundingClientRect = window.HTMLElement.prototype.getBoundingClientRect
+      window.HTMLElement.prototype.getBoundingClientRect = function () {
+        const width = 100
+        const height = 100
+        if (this.hasAttribute('data-transferable')) {
+          if (this.style.top) {
+            const top = parseInt(this.style.top, 10)
+            const left = parseInt(this.style.left, 10)
+
+            return getBox(top, left, width, height)
+          } else {
+            return getBox(0, 0, width, height)
+          }
+        } else if (this.classList.contains('block') || this.classList.contains('dnd-placeholder')) {
+          const index = nodeIndex(this)
+
+          if (mode === 'horizontal') {
+            return getBox(0, index * width, width, height)
+          } else {
+            return getBox(index * height, 0, width, height)
+          }
+        } else {
+          const length = this.children.length
+
+          if (mode === 'horizontal') {
+            return getBox(0, 0, length * width, height)
+          } else {
+            return getBox(0, 0, width, length * height)
+          }
+        }
+      }
+    })
+    afterEach(() => {
+      window.HTMLElement.prototype.getBoundingClientRect = safeGetBoundingClientRect
+    })
+  }
+
   function startDrag (source) {
     mousedown(source)
     mousemove(source, {x: 100, y: 100})
@@ -54,6 +105,17 @@ describe('drag source', () => {
 
     mousemove(dragged, coords)
     mouseover(target, coords)
+    mousemove(target, coords)
+  }
+
+  function drag (target, offsets = {}) {
+    const center = objectCenterCoordinates(target)
+    const coords = {
+      x: offsets.x != null ? offsets.x : center.x,
+      y: offsets.y != null ? offsets.y : center.y
+    }
+
+    mousemove(dragged, coords)
     mousemove(target, coords)
   }
 
@@ -337,6 +399,71 @@ describe('drag source', () => {
       expect(dragged).not.to.be(dragSource)
       expect(dragged.nodeName).to.eql('DIV')
       expect(dragged.classList.contains('source')).to.be.ok()
+    })
+  })
+
+  describe('dragging gesture', () => {
+    describe('in a vertical layout container', () => {
+      withFakeBoundingClientRects('vertical')
+
+      beforeEach(() => {
+        buildDragContext({
+          handle: 'handler',
+          content: '<div class="block"></div><div class="block"></div>'
+        }, {
+          transferable: 'foo'
+        })
+
+        startDrag(dragSource)
+      })
+
+      describe('when the mouse is above the upper half of the first child', () => {
+        it('inserts the placeholder before the first child', () => {
+          dragOver(dropTarget, {x: 50, y: 10})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(0)
+        })
+      })
+
+      describe('when the mouse is above the lower half of a container child', () => {
+        it('inserts the placeholder after the child', () => {
+          dragOver(dropTarget, {x: 50, y: 60})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+        })
+      })
+
+      describe('when the mouse is above the upper half of the last child', () => {
+        it('inserts the placeholder before the last child', () => {
+          dragOver(dropTarget, {x: 50, y: 110})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+        })
+      })
+
+      describe('when the mouse is above the lower half of the last child', () => {
+        it('inserts the placeholder after the last child', () => {
+          dragOver(dropTarget, {x: 50, y: 160})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(2)
+        })
+      })
+
+      describe('when the mouse is above the placeholder', () => {
+        it('does not change the placeholder position', () => {
+          dragOver(dropTarget, {x: 50, y: 60})
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+
+          drag(dropTarget, {x: 50, y: 110})
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+
+          drag(dropTarget, {x: 50, y: 210})
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+
+          drag(dropTarget, {x: 50, y: 260})
+          expect(nodeIndex(getPlaceholder())).to.eql(2)
+        })
+      })
     })
   })
 })
