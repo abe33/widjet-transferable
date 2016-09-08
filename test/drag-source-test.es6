@@ -35,6 +35,9 @@ describe('drag source', () => {
     dropTarget = document.querySelector('[data-drop]')
   }
 
+  function getPlaceholder () {
+    return dropTarget.querySelector('.dnd-placeholder')
+  }
   function startDrag (source) {
     mousedown(source)
     mousemove(source, {x: 100, y: 100})
@@ -89,7 +92,7 @@ describe('drag source', () => {
     })
 
     it('adds a drag and drop placeholder in the drop target', () => {
-      expect(dropTarget.querySelector('.dnd-placeholder')).not.to.be(null)
+      expect(getPlaceholder()).not.to.be(null)
     })
   }
 
@@ -157,7 +160,7 @@ describe('drag source', () => {
             expectSucceedingDrop()
 
             it('removes the drag and drop placeholder from the drop target', () => {
-              expect(dropTarget.querySelector('.dnd-placeholder')).to.be(null)
+              expect(getPlaceholder()).to.be(null)
             })
           })
 
@@ -169,7 +172,7 @@ describe('drag source', () => {
             })
 
             it('removes the drag and drop placeholder from the drop target', () => {
-              expect(dropTarget.querySelector('.dnd-placeholder')).to.be(null)
+              expect(getPlaceholder()).to.be(null)
             })
 
             describe('then releasing the mouse', () => {
@@ -210,7 +213,7 @@ describe('drag source', () => {
           })
 
           it('does not add a drag and drop placeholder in the drop target', () => {
-            expect(dropTarget.querySelector('.dnd-placeholder')).to.be(null)
+            expect(getPlaceholder()).to.be(null)
           })
 
           describe('then releasing the mouse', () => {
