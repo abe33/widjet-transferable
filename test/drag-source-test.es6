@@ -465,5 +465,69 @@ describe('drag source', () => {
         })
       })
     })
+
+    describe('in a horizontal layout container', () => {
+      withFakeBoundingClientRects('horizontal')
+
+      beforeEach(() => {
+        buildDragContext({
+          handle: 'handler',
+          content: '<div class="block"></div><div class="block"></div>',
+          'horizontal-drag': true
+        }, {
+          transferable: 'foo'
+        })
+
+        startDrag(dragSource)
+      })
+
+      describe('when the mouse is above the left half of the first child', () => {
+        it('inserts the placeholder before the first child', () => {
+          dragOver(dropTarget, {y: 50, x: 10})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(0)
+        })
+      })
+
+      describe('when the mouse is above the right half of a container child', () => {
+        it('inserts the placeholder after the child', () => {
+          dragOver(dropTarget, {y: 50, x: 60})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+        })
+      })
+
+      describe('when the mouse is above the left half of the last child', () => {
+        it('inserts the placeholder before the last child', () => {
+          dragOver(dropTarget, {y: 50, x: 110})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+        })
+      })
+
+      describe('when the mouse is above the right half of the last child', () => {
+        it('inserts the placeholder after the last child', () => {
+          dragOver(dropTarget, {y: 50, x: 160})
+
+          expect(nodeIndex(getPlaceholder())).to.eql(2)
+        })
+      })
+
+      describe('when the mouse is above the placeholder', () => {
+        it('does not change the placeholder position', () => {
+          dragOver(dropTarget, {y: 50, x: 60})
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+
+          drag(dropTarget, {y: 50, x: 110})
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+
+          drag(dropTarget, {y: 50, x: 210})
+          expect(nodeIndex(getPlaceholder())).to.eql(1)
+
+          drag(dropTarget, {y: 50, x: 260})
+          expect(nodeIndex(getPlaceholder())).to.eql(2)
+        })
+      })
+    })
   })
 })
