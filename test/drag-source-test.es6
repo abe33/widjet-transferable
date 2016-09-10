@@ -402,6 +402,44 @@ describe('drag source', () => {
     })
   })
 
+  describe('dragging a source with a data-dnd-placeholder attribute', () => {
+    describe('set to clone', () => {
+      beforeEach(() => {
+        buildDragContext({
+          handle: 'handler'
+        }, {
+          transferable: 'foo',
+          'dnd-placeholder': 'clone'
+        })
+
+        startDrag(dragSource)
+        dragOver(dropTarget)
+      })
+
+      it('clones the provided image source', () => {
+        expect(getPlaceholder().innerHTML).to.eql('<div data-transferable="foo" data-dnd-placeholder="clone" class="drag-source-handled">content</div>')
+      })
+    })
+
+    describe('set to a selector', () => {
+      beforeEach(() => {
+        buildDragContext({
+          handle: 'handler'
+        }, {
+          transferable: 'foo',
+          'dnd-placeholder': '.source'
+        }, '<div class="source"></div>')
+
+        startDrag(dragSource)
+        dragOver(dropTarget)
+      })
+
+      it('clones the provided element', () => {
+        expect(getPlaceholder().innerHTML).to.eql('<div class="source"></div>')
+      })
+    })
+  })
+
   describe('dragging gesture', () => {
     describe('in a vertical layout container', () => {
       withFakeBoundingClientRects('vertical')

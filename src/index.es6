@@ -3,6 +3,19 @@ import {asArray, cloneNode, getNode, nodeIndex, detachNode} from 'widjet-utils'
 import {CompositeDisposable, DisposableEvent} from 'widjet-disposables'
 
 widgets.define('drag-source', (el, options = {}) => {
+  let dragged
+  let dragging
+  let dragOffset
+  let originalIndex
+  let originalParent
+  let originalPos
+  let placeholder
+  let potentialTargets
+  let potentialTargetsSubscriptions
+  let target
+  let windowSubscriptions
+  let placeholderContent = ''
+
   const targetContainer = options.targetContainer
     ? options.targetContainer
     : document
@@ -27,18 +40,20 @@ widgets.define('drag-source', (el, options = {}) => {
   const gripSelector = el.getAttribute('data-grip')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
   const excludedChildrenClasses = ['.dnd-placeholder'].concat(options.excludedChildrenClasses || [])
+  const dndPlaceholder = el.getAttribute('data-dnd-placeholder')
 
-  let dragOffset = null
-  let dragging = false
-  let originalPos = null
-  let originalParent = null
-  let originalIndex = null
-  let potentialTargets = null
-  let potentialTargetsSubscriptions = null
-  let windowSubscriptions = null
-  let target = null
-  let dragged = null
-  let placeholder = null
+  if (dndPlaceholder) {
+    switch (dndPlaceholder) {
+      case 'clone':
+        placeholderContent = el.outerHTML
+        break
+      default:
+        const placeholderElement = document.querySelector(dndPlaceholder)
+        if (placeholderElement) {
+          placeholderContent = placeholderElement.outerHTML
+        }
+    }
+  }
 
   const startDrag = (e) => {
     const targetSelector = flavors.some(f => f === '{all}')
@@ -72,7 +87,7 @@ widgets.define('drag-source', (el, options = {}) => {
 
     if (transferableImageSource || transferableImage) { detachNode(el) }
 
-    placeholder = getNode("<div class='dnd-placeholder'></div>")
+    placeholder = getNode(`<div class='dnd-placeholder'>${placeholderContent}</div>`)
     potentialTargets = asArray(targetContainer.querySelectorAll(targetSelector))
 
     potentialTargetsSubscriptions = new CompositeDisposable()
