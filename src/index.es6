@@ -2,6 +2,16 @@ import widgets from 'widjet'
 import {asArray, cloneNode, getNode, nodeIndex, detachNode} from 'widjet-utils'
 import {CompositeDisposable, DisposableEvent} from 'widjet-disposables'
 
+widgets.define('drop-target', (el) => {
+  const handler = window[el.getAttribute('data-handle')]
+
+  if (!handler) {
+    throw new Error('Cannot create a drop target without a handler function')
+  }
+
+  el.dropHandle = (...args) => { handler.call(el, ...args) }
+})
+
 widgets.define('drag-source', (el, options = {}) => {
   let dragged
   let dragging
@@ -14,15 +24,11 @@ widgets.define('drag-source', (el, options = {}) => {
   let potentialTargetsSubscriptions
   let target
   let windowSubscriptions
-  let placeholderContent = ''
 
-  const targetContainer = options.targetContainer
-    ? options.targetContainer
-    : document
-
-  const draggedContainer = options.draggedContainer
-    ? options.draggedContainer
-    : document
+  const dropSelector = options.dropSelector || '[data-drop]'
+  const targetContainer = options.targetContainer || document
+  const draggedContainer = options.draggedContainer || document
+  const excludedChildrenClasses = ['.dnd-placeholder'].concat(options.excludedChildrenClasses || [])
 
   const transferableImageSourceQuery = el.getAttribute('data-image-source')
   const transferableImageSource = transferableImageSourceQuery
@@ -39,26 +45,12 @@ widgets.define('drag-source', (el, options = {}) => {
   const transferable = el.getAttribute('data-transferable').toString()
   const gripSelector = el.getAttribute('data-grip')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
-  const excludedChildrenClasses = ['.dnd-placeholder'].concat(options.excludedChildrenClasses || [])
-  const dndPlaceholder = el.getAttribute('data-dnd-placeholder')
-
-  if (dndPlaceholder) {
-    switch (dndPlaceholder) {
-      case 'clone':
-        placeholderContent = el.outerHTML
-        break
-      default:
-        const placeholderElement = document.querySelector(dndPlaceholder)
-        if (placeholderElement) {
-          placeholderContent = placeholderElement.outerHTML
-        }
-    }
-  }
+  const placeholderContent = getPlaceholderContent(el)
 
   const startDrag = (e) => {
     const targetSelector = flavors.some(f => f === '{all}')
-      ? '[data-drop]'
-      : flavors.map(f => `[data-drop][data-flavors*='${f}']`).join(',')
+      ? dropSelector
+      : flavors.map(f => `${dropSelector}[data-flavors*='${f}']`).join(',')
 
     originalPos = el.getBoundingClientRect()
     originalParent = el.parentNode
@@ -87,7 +79,7 @@ widgets.define('drag-source', (el, options = {}) => {
 
     if (transferableImageSource || transferableImage) { detachNode(el) }
 
-    placeholder = getNode(`<div class='dnd-placeholder'>${placeholderContent}</div>`)
+    placeholder = getPlaceholder(placeholderContent)
     potentialTargets = asArray(targetContainer.querySelectorAll(targetSelector))
 
     potentialTargetsSubscriptions = new CompositeDisposable()
@@ -267,15 +259,21 @@ widgets.define('drag-source', (el, options = {}) => {
   })
 })
 
-widgets.define('drop-target', (el) => {
-  const handlerName = el.getAttribute('data-handle')
-  const handler = window[handlerName]
+function getPlaceholder (content) {
+  return getNode(`<div class='dnd-placeholder'>${content}</div>`)
+}
 
-  if (!handler) {
-    throw new Error('Cannot create a drop target without a handler function')
-  }
+function getPlaceholderContent (el) {
+  const dndPlaceholder = el.getAttribute('data-dnd-placeholder')
 
-  el.dropHandle = (transferable, flavors, index, sourceElement) => {
-    handler.call(el, transferable, flavors, index, sourceElement)
+  if (dndPlaceholder) {
+    switch (dndPlaceholder) {
+      case 'clone': return el.outerHTML
+      default:
+        const placeholderElement = document.querySelector(dndPlaceholder)
+        if (placeholderElement) { return placeholderElement.outerHTML }
+    }
   }
-})
+  return ''
+}
+
