@@ -46,6 +46,7 @@ widgets.define('drag-source', (el, options = {}) => {
   const gripSelector = el.getAttribute('data-grip')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
   const placeholderContent = getPlaceholderContent(el)
+  const legitChildren = legitChildrenFilter(excludedChildrenClasses)
 
   const startDrag = (e) => {
     const targetSelector = flavors.some(f => f === '{all}')
@@ -91,6 +92,14 @@ widgets.define('drag-source', (el, options = {}) => {
         potentialTarget.classList.add('drop')
         potentialTarget.appendChild(placeholder)
 
+        const horizontalDrag = potentialTarget.hasAttribute('data-horizontal-drag')
+
+        const mover = movePlaceholder({
+          placeholder,
+          horizontalDrag,
+          target: potentialTarget
+        })
+
         const potentialTargetSubscription = new CompositeDisposable()
 
         potentialTargetSubscription.add(new DisposableEvent(potentialTarget, 'mousemove', (e) => {
@@ -98,63 +107,9 @@ widgets.define('drag-source', (el, options = {}) => {
 
           pageY -= targetContainer.defaultView.scrollY
           pageX -= targetContainer.defaultView.scrollX
-
           target = potentialTarget
 
-          const horizontalDrag = potentialTarget.hasAttribute('data-horizontal-drag')
-          const children = asArray(potentialTarget.children).filter(child => {
-            const sel = excludedChildrenClasses.map(c => `:not(${c})`).join('')
-            return child.matches(sel)
-          })
-
-          for (let i = 0; i < children.length; i++) {
-            const child = children[i]
-            const nextChild = children[i + 1]
-
-            const {
-              top: childTop,
-              left: childLeft,
-              height: childHeight,
-              width: childWidth
-            } = child.getBoundingClientRect()
-
-            const childHalfHeight = childTop + (childHeight / 2)
-            const childHalfWidth = childLeft + (childWidth / 2)
-
-            const shouldInsertBefore = horizontalDrag
-              ? pageX < childHalfWidth
-              : pageY < childHalfHeight
-
-            const shouldInsertAtEnd = horizontalDrag
-              ? pageX >= childHalfWidth
-              : pageY >= childHalfHeight
-
-            if (shouldInsertBefore) {
-              potentialTarget.insertBefore(placeholder, child)
-              break
-            } else if (nextChild) {
-              const {
-                top: nextChildTop,
-                left: nextChildLeft,
-                height: nextChildHeight,
-                width: nextChildWidth
-              } = nextChild.getBoundingClientRect()
-
-              const nextChildHalfHeight = nextChildTop + (nextChildHeight / 2)
-              const nextChildHalfWidth = nextChildLeft + (nextChildWidth / 2)
-
-              const shouldInsertBeforeNextChild = horizontalDrag
-                ? pageX >= childHalfWidth && pageX <= nextChildHalfWidth
-                : pageY >= childHalfHeight && pageY <= nextChildHalfHeight
-
-              if (shouldInsertBeforeNextChild) {
-                potentialTarget.insertBefore(placeholder, nextChild)
-                break
-              }
-            } else if (!nextChild && shouldInsertAtEnd) {
-              potentialTarget.appendChild(placeholder)
-            }
-          }
+          legitChildren(potentialTarget.children).some(mover(pageX, pageY))
         }))
 
         potentialTargetSubscription.add(new DisposableEvent(potentialTarget, 'mouseout', (e) => {
@@ -277,3 +232,59 @@ function getPlaceholderContent (el) {
   return ''
 }
 
+function legitChildrenFilter (excludedChildrenClasses) {
+  const sel = excludedChildrenClasses.map(c => `:not(${c})`).join('')
+  return children => asArray(children).filter(child => child.matches(sel))
+}
+
+function movePlaceholder ({target, horizontalDrag, placeholder}) {
+  return function (pageX, pageY) {
+    return function (child, i, children) {
+      const nextChild = children[i + 1]
+
+      const {
+        top: childTop,
+        left: childLeft,
+        height: childHeight,
+        width: childWidth
+      } = child.getBoundingClientRect()
+
+      const childHalfHeight = childTop + (childHeight / 2)
+      const childHalfWidth = childLeft + (childWidth / 2)
+
+      const shouldInsertBefore = horizontalDrag
+      ? pageX < childHalfWidth
+      : pageY < childHalfHeight
+
+      const shouldInsertAtEnd = horizontalDrag
+      ? pageX >= childHalfWidth
+      : pageY >= childHalfHeight
+
+      if (shouldInsertBefore) {
+        target.insertBefore(placeholder, child)
+        return true
+      } else if (nextChild) {
+        const {
+          top: nextChildTop,
+          left: nextChildLeft,
+          height: nextChildHeight,
+          width: nextChildWidth
+        } = nextChild.getBoundingClientRect()
+
+        const nextChildHalfHeight = nextChildTop + (nextChildHeight / 2)
+        const nextChildHalfWidth = nextChildLeft + (nextChildWidth / 2)
+
+        const shouldInsertBeforeNextChild = horizontalDrag
+        ? pageX >= childHalfWidth && pageX <= nextChildHalfWidth
+        : pageY >= childHalfHeight && pageY <= nextChildHalfHeight
+
+        if (shouldInsertBeforeNextChild) {
+          target.insertBefore(placeholder, nextChild)
+          return true
+        }
+      } else if (!nextChild && shouldInsertAtEnd) {
+        target.appendChild(placeholder)
+      }
+    }
+  }
+}
