@@ -94,7 +94,7 @@ widgets.define('drag-source', (el, options = {}) => {
 
         const horizontalDrag = potentialTarget.hasAttribute('data-horizontal-drag')
 
-        const mover = movePlaceholder({
+        const find = positionFinder({
           placeholder,
           horizontalDrag,
           target: potentialTarget
@@ -103,13 +103,13 @@ widgets.define('drag-source', (el, options = {}) => {
         const potentialTargetSubscription = new CompositeDisposable()
 
         potentialTargetSubscription.add(new DisposableEvent(potentialTarget, 'mousemove', (e) => {
-          let {pageY, pageX} = e
+          let {pageY: y, pageX: x} = e
 
-          pageY -= targetContainer.defaultView.scrollY
-          pageX -= targetContainer.defaultView.scrollX
+          y -= targetContainer.defaultView.scrollY
+          x -= targetContainer.defaultView.scrollX
           target = potentialTarget
 
-          legitChildren(potentialTarget.children).some(mover(pageX, pageY))
+          legitChildren(target.children).some(find(x, y))
         }))
 
         potentialTargetSubscription.add(new DisposableEvent(potentialTarget, 'mouseout', (e) => {
@@ -237,7 +237,7 @@ function legitChildrenFilter (excludedChildrenClasses) {
   return children => asArray(children).filter(child => child.matches(sel))
 }
 
-function movePlaceholder ({target, horizontalDrag, placeholder}) {
+function positionFinder ({target, horizontalDrag, placeholder}) {
   return function (pageX, pageY) {
     return function (child, i, children) {
       const nextChild = children[i + 1]
