@@ -31,31 +31,32 @@ widgets.define('drag-source', (el, options = {}) => {
   const dropSelector = options.dropSelector || '[data-drop]'
   const targetContainer = options.targetContainer || document
   const draggedContainer = options.draggedContainer || document
+
   const excludedChildrenClasses = ['.dnd-placeholder'].concat(options.excludedChildrenClasses || [])
+  const legitChildren = legitChildrenFilter(excludedChildrenClasses)
 
   const transferableImageSourceQuery = el.getAttribute('data-image-source')
   const transferableImageSource = transferableImageSourceQuery
     ? draggedContainer.querySelector(transferableImageSourceQuery)
     : null
-
   const transferableImage = (el.hasAttribute('data-image'))
     ? getNode(el.getAttribute('data-image'))
     : null
 
+  const flavors = getFlavors(el)
+  const targetSelector = flavors.some(isAnyFlavor)
+    ? dropSelector
+    : flavors.map(f => `${dropSelector}[data-flavors*='${f}']`).join(',')
+
   const keepSource = el.getAttribute('data-keep')
   const noDragOffset = el.hasAttribute('data-no-drag-offset')
-  const flavors = getFlavors(el)
   const transferable = el.getAttribute('data-transferable').toString()
   const gripSelector = el.getAttribute('data-grip')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
   const placeholderContent = getPlaceholderContent(el)
-  const legitChildren = legitChildrenFilter(excludedChildrenClasses)
+
 
   const startDrag = (e) => {
-    const targetSelector = flavors.some(isAnyFlavor)
-      ? dropSelector
-      : flavors.map(f => `${dropSelector}[data-flavors*='${f}']`).join(',')
-
     originalPos = el.getBoundingClientRect()
     originalParent = el.parentNode
     originalIndex = nodeIndex(el)
