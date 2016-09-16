@@ -2,6 +2,9 @@ import widgets from 'widjet'
 import {asArray, cloneNode, getNode, nodeIndex, detachNode} from 'widjet-utils'
 import {CompositeDisposable, DisposableEvent} from 'widjet-disposables'
 
+const ANY_FLAVOR = '{all}'
+const isAnyFlavor = f => f === ANY_FLAVOR
+
 widgets.define('drop-target', (el) => {
   const handler = window[el.getAttribute('data-handle')]
 
@@ -41,7 +44,7 @@ widgets.define('drag-source', (el, options = {}) => {
 
   const keepSource = el.getAttribute('data-keep')
   const noDragOffset = el.hasAttribute('data-no-drag-offset')
-  const flavors = (el.getAttribute('data-flavors') || '{all}').split(',')
+  const flavors = getFlavors(el)
   const transferable = el.getAttribute('data-transferable').toString()
   const gripSelector = el.getAttribute('data-grip')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
@@ -49,7 +52,7 @@ widgets.define('drag-source', (el, options = {}) => {
   const legitChildren = legitChildrenFilter(excludedChildrenClasses)
 
   const startDrag = (e) => {
-    const targetSelector = flavors.some(f => f === '{all}')
+    const targetSelector = flavors.some(isAnyFlavor)
       ? dropSelector
       : flavors.map(f => `${dropSelector}[data-flavors*='${f}']`).join(',')
 
@@ -100,40 +103,37 @@ widgets.define('drag-source', (el, options = {}) => {
           target: potentialTarget
         })
 
-        const potentialTargetSubscription = new CompositeDisposable()
+        const potentialTargetSubscription = new CompositeDisposable([
+          new DisposableEvent(potentialTarget, 'mousemove', (e) => {
+            let {pageY: y, pageX: x} = e
 
-        potentialTargetSubscription.add(new DisposableEvent(potentialTarget, 'mousemove', (e) => {
-          let {pageY: y, pageX: x} = e
+            y -= targetContainer.defaultView.scrollY
+            x -= targetContainer.defaultView.scrollX
+            target = potentialTarget
 
-          y -= targetContainer.defaultView.scrollY
-          x -= targetContainer.defaultView.scrollX
-          target = potentialTarget
+            legitChildren(target.children).some(find(x, y))
+          }),
 
-          legitChildren(target.children).some(find(x, y))
-        }))
-
-        potentialTargetSubscription.add(new DisposableEvent(potentialTarget, 'mouseout', (e) => {
-          detachNode(placeholder)
-          potentialTarget.classList.remove('drop')
-          potentialTargetSubscription.dispose()
-          target = null
-        }))
+          new DisposableEvent(potentialTarget, 'mouseout', (e) => {
+            detachNode(placeholder)
+            potentialTarget.classList.remove('drop')
+            potentialTargetSubscription.dispose()
+            target = null
+          })
+        ])
       }))
     })
   }
 
   const stopDrag = (e) => {
     draggedContainer.body.classList.remove('dragging')
-
-    asArray(potentialTargets).forEach((potentialTarget) => {
-      potentialTarget.classList.remove('accept-drop')
-    })
+    potentialTargets.forEach(n => n.classList.remove('accept-drop'))
 
     if (target != null) {
       const targetIndex = nodeIndex(placeholder)
-      const dropFlavor = (target.getAttribute('data-flavors') || '{all}').split(',')
+      const dropFlavor = getFlavors(target)
 
-      const matchedFlavors = dropFlavor[0] === '{all}'
+      const matchedFlavors = isAnyFlavor(dropFlavor[0])
         ? flavors
         : flavors.filter(f => dropFlavor.indexOf(f) !== -1)
 
@@ -153,7 +153,9 @@ widgets.define('drag-source', (el, options = {}) => {
       if (keepSource) {
         detachNode(dragged)
       } else if (originalParent) {
-        if (transferableImageSource || transferableImage) { detachNode(dragged) }
+        if (transferableImageSource || transferableImage) {
+          detachNode(dragged)
+        }
 
         const next = originalParent.children[originalIndex]
 
@@ -166,8 +168,7 @@ widgets.define('drag-source', (el, options = {}) => {
   }
 
   const drag = (e) => {
-    let x = e.pageX
-    let y = e.pageY
+    let {pageX: x, pageY: y} = e
 
     if (!noDragOffset) {
       x += dragOffset.x
@@ -185,34 +186,38 @@ widgets.define('drag-source', (el, options = {}) => {
 
     const start = {x: e.pageX, y: e.pageY}
 
-    windowSubscriptions = new CompositeDisposable()
-    windowSubscriptions.add(new DisposableEvent(draggedContainer.defaultView, 'mouseup', (e) => {
-      e.stopImmediatePropagation()
-      if (dragging) {
-        stopDrag(e)
-        dragging = false
-      }
+    windowSubscriptions = new CompositeDisposable([
+      new DisposableEvent(draggedContainer.defaultView, 'mouseup', (e) => {
+        e.stopImmediatePropagation()
+        if (dragging) {
+          stopDrag(e)
+          dragging = false
+        }
 
-      windowSubscriptions.dispose()
-      potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
-    }))
+        windowSubscriptions.dispose()
+        potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
+      }),
+      new DisposableEvent(draggedContainer.defaultView, 'mousemove', (e) => {
+        e.stopImmediatePropagation()
+        if (!dragging) {
+          let difX = e.pageX - start.x
+          let difY = e.pageY - start.y
 
-    windowSubscriptions.add(new DisposableEvent(draggedContainer.defaultView, 'mousemove', (e) => {
-      e.stopImmediatePropagation()
-      if (!dragging) {
-        let difX = e.pageX - start.x
-        let difY = e.pageY - start.y
-
-        if (Math.abs(Math.sqrt((difX * difX) + (difY * difY))) > 10) {
-          startDrag(e)
+          if (Math.abs(Math.sqrt((difX * difX) + (difY * difY))) > 10) {
+            startDrag(e)
+            drag(e)
+          }
+        } else {
           drag(e)
         }
-      } else {
-        drag(e)
-      }
-    }))
+      })
+    ])
   })
 })
+
+function getFlavors (el) {
+  return (el.getAttribute('data-flavors') || ANY_FLAVOR).split(',')
+}
 
 function getPlaceholder (content) {
   return getNode(`<div class='dnd-placeholder'>${content}</div>`)
