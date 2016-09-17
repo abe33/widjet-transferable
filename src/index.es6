@@ -29,19 +29,10 @@ widgets.define('drag-source', (el, options = {}) => {
   let windowSubscriptions
 
   const dropSelector = options.dropSelector || '[data-drop]'
-  const targetContainer = options.targetContainer || document
-  const draggedContainer = options.draggedContainer || document
+  const dropContainer = options.dropContainer || document
+  const dragContainer = options.dragContainer || document
 
-  const excludedChildrenClasses = ['.dnd-placeholder'].concat(options.excludedChildrenClasses || [])
-  const legitChildren = legitChildrenFilter(excludedChildrenClasses)
-
-  const transferableImageSourceQuery = el.getAttribute('data-image-source')
-  const transferableImageSource = transferableImageSourceQuery
-    ? draggedContainer.querySelector(transferableImageSourceQuery)
-    : null
-  const transferableImage = (el.hasAttribute('data-image'))
-    ? getNode(el.getAttribute('data-image'))
-    : null
+  const filterChildren = legitChildrenFilter(options)
 
   const flavors = getFlavors(el)
   const targetSelector = flavors.some(isAnyFlavor)
@@ -55,37 +46,25 @@ widgets.define('drag-source', (el, options = {}) => {
   const grip = gripSelector ? el.querySelector(gripSelector) : el
   const placeholderContent = getPlaceholderContent(el)
 
-
   const startDrag = (e) => {
     originalPos = el.getBoundingClientRect()
     originalParent = el.parentNode
     originalIndex = nodeIndex(el)
 
+    dragged = getDraggedElement(el, dragContainer)
     dragging = true
     dragOffset = {
       x: originalPos.left - e.pageX,
       y: originalPos.top - e.pageY
     }
 
-    dragged = transferableImage || (transferableImageSource
-      ? cloneNode(transferableImageSource)
-      : (keepSource ? cloneNode(el) : el)
-    )
+    dragContainer.body.appendChild(dragged)
+    dragContainer.body.classList.add('dragging')
 
-    if (!transferableImage && !transferableImageSource) {
-      dragged.style.width = el.clientWidth + 'px'
-    }
-
-    dragged.style.position = 'absolute'
-    dragged.classList.add('dragged')
-
-    draggedContainer.body.appendChild(dragged)
-    draggedContainer.body.classList.add('dragging')
-
-    if (transferableImageSource || transferableImage) { detachNode(el) }
+    if (hasTransferableImage(el)) { detachNode(el) }
 
     placeholder = getPlaceholder(placeholderContent)
-    potentialTargets = asArray(targetContainer.querySelectorAll(targetSelector))
+    potentialTargets = asArray(dropContainer.querySelectorAll(targetSelector))
 
     potentialTargetsSubscriptions = new CompositeDisposable()
 
@@ -96,11 +75,9 @@ widgets.define('drag-source', (el, options = {}) => {
         potentialTarget.classList.add('drop')
         potentialTarget.appendChild(placeholder)
 
-        const horizontalDrag = potentialTarget.hasAttribute('data-horizontal-drag')
-
-        const find = positionFinder({
+        const findPosition = positionFinder({
           placeholder,
-          horizontalDrag,
+          horizontalDrag: potentialTarget.hasAttribute('data-horizontal-drag'),
           target: potentialTarget
         })
 
@@ -108,11 +85,11 @@ widgets.define('drag-source', (el, options = {}) => {
           new DisposableEvent(potentialTarget, 'mousemove', (e) => {
             let {pageY: y, pageX: x} = e
 
-            y -= targetContainer.defaultView.scrollY
-            x -= targetContainer.defaultView.scrollX
+            y -= dropContainer.defaultView.scrollY
+            x -= dropContainer.defaultView.scrollX
             target = potentialTarget
 
-            legitChildren(target.children).some(find(x, y))
+            filterChildren(target.children).some(findPosition(x, y))
           }),
 
           new DisposableEvent(potentialTarget, 'mouseout', (e) => {
@@ -127,7 +104,7 @@ widgets.define('drag-source', (el, options = {}) => {
   }
 
   const stopDrag = (e) => {
-    draggedContainer.body.classList.remove('dragging')
+    dragContainer.body.classList.remove('dragging')
     potentialTargets.forEach(n => n.classList.remove('accept-drop'))
 
     if (target != null) {
@@ -138,7 +115,7 @@ widgets.define('drag-source', (el, options = {}) => {
         ? flavors
         : flavors.filter(f => dropFlavor.indexOf(f) !== -1)
 
-      if (keepSource || transferableImageSource || transferableImage) {
+      if (keepSource || hasTransferableImage(el)) {
         detachNode(dragged)
       } else {
         dragged.classList.remove('dragged')
@@ -154,9 +131,7 @@ widgets.define('drag-source', (el, options = {}) => {
       if (keepSource) {
         detachNode(dragged)
       } else if (originalParent) {
-        if (transferableImageSource || transferableImage) {
-          detachNode(dragged)
-        }
+        if (hasTransferableImage(el)) { detachNode(dragged) }
 
         const next = originalParent.children[originalIndex]
 
@@ -188,7 +163,7 @@ widgets.define('drag-source', (el, options = {}) => {
     const start = {x: e.pageX, y: e.pageY}
 
     windowSubscriptions = new CompositeDisposable([
-      new DisposableEvent(draggedContainer.defaultView, 'mouseup', (e) => {
+      new DisposableEvent(dragContainer.defaultView, 'mouseup', (e) => {
         e.stopImmediatePropagation()
         if (dragging) {
           stopDrag(e)
@@ -198,7 +173,7 @@ widgets.define('drag-source', (el, options = {}) => {
         windowSubscriptions.dispose()
         potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
       }),
-      new DisposableEvent(draggedContainer.defaultView, 'mousemove', (e) => {
+      new DisposableEvent(dragContainer.defaultView, 'mousemove', (e) => {
         e.stopImmediatePropagation()
         if (!dragging) {
           let difX = e.pageX - start.x
@@ -238,8 +213,38 @@ function getPlaceholderContent (el) {
   return ''
 }
 
-function legitChildrenFilter (excludedChildrenClasses) {
-  const sel = excludedChildrenClasses.map(c => `:not(${c})`).join('')
+function hasTransferableImage (el) {
+  return el.hasAttribute('data-image-source') || el.hasAttribute('data-image')
+}
+
+function getDraggedElement (el, container) {
+  const keepSource = el.getAttribute('data-keep')
+  const transferableImageSource = el.hasAttribute('data-image-source')
+    ? container.querySelector(el.getAttribute('data-image-source'))
+    : null
+  const transferableImage = (el.hasAttribute('data-image'))
+    ? getNode(el.getAttribute('data-image'))
+    : null
+  const dragged = transferableImage || (transferableImageSource
+    ? cloneNode(transferableImageSource)
+    : (keepSource ? cloneNode(el) : el)
+  )
+
+  if (!transferableImage && !transferableImageSource) {
+    dragged.style.width = el.clientWidth + 'px'
+    dragged.style.height = el.clientHeight + 'px'
+  }
+
+  dragged.style.position = 'absolute'
+  dragged.classList.add('dragged')
+
+  return dragged
+}
+
+function legitChildrenFilter (o) {
+  const classes = ['.dnd-placeholder'].concat(o.excludedChildrenClasses || [])
+  const sel = classes.map(c => `:not(${c})`).join('')
+
   return children => asArray(children).filter(child => child.matches(sel))
 }
 
