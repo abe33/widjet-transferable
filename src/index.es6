@@ -5,8 +5,8 @@ import {CompositeDisposable, DisposableEvent} from 'widjet-disposables'
 const ANY_FLAVOR = '{all}'
 const isAnyFlavor = f => f === ANY_FLAVOR
 
-widgets.define('drop-target', (el) => {
-  const handler = window[el.getAttribute('data-handle')]
+widgets.define('drop-target', (el, options) => {
+  const handler = options[el.getAttribute('data-handle')]
 
   if (!handler) {
     throw new Error('Cannot create a drop target without a handler function')

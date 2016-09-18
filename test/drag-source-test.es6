@@ -12,7 +12,7 @@ import '../src/index'
 describe('drag source', () => {
   jsdom()
 
-  let [dragSource, dropTarget, container, dragged] = []
+  let [dragSource, dropTarget, container, dragged, handler] = []
 
   function buildDragContext (dropAttrs = {}, dragAttrs = {}, {extraMarkup, extraDragOptions, extraDropOptions} = {}) {
     const dropTargetContent = dropAttrs.content || ''
@@ -28,7 +28,9 @@ describe('drag source', () => {
     ${extraMarkup || ''}
     `
 
-    widgets('drop-target', '[data-drop]', merge({on: 'init'}, extraDropOptions || {}))
+    handler = sinon.spy()
+
+    widgets('drop-target', '[data-drop]', merge({on: 'init', handler}, extraDropOptions || {}))
     widgets('drag-source', '[data-transferable]', merge({on: 'init'}, extraDragOptions || {}))
 
     container = document.querySelector('.container')
@@ -176,13 +178,13 @@ describe('drag source', () => {
   }
   function expectSucceedingDrop () {
     it('calls the drop handler function', () => {
-      expect(window.handler.called).to.be.ok()
+      expect(handler.called).to.be.ok()
     })
   }
 
   function expectAbortedDrop () {
     it('does not call the drop handler function', () => {
-      expect(window.handler.called).not.to.be.ok()
+      expect(handler.called).not.to.be.ok()
     })
   }
 
@@ -192,8 +194,6 @@ describe('drag source', () => {
 
     widgets.release('drag-source')
     widgets.release('drop-target')
-
-    window.handler = sinon.spy()
   })
 
   describe('dragging the source itself', () => {

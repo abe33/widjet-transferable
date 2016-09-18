@@ -33,20 +33,22 @@ describe('drop targets', () => {
   })
 
   describe('with a defined handler method', () => {
+    let handler
+
     beforeEach(() => {
       document.body.innerHTML = '<div data-drop data-handle="handler"></div>'
 
-      window.handler = sinon.spy()
+      handler = sinon.spy()
     })
 
     it('creates a method on the element that calls that handler', () => {
-      widgets('drop-target', '[data-drop]', {on: 'init'})
+      widgets('drop-target', '[data-drop]', {on: 'init', handler})
 
       const element = document.querySelector('[data-drop]')
 
       element.dropHandle()
 
-      expect(window.handler.called).to.be.ok()
+      expect(handler.called).to.be.ok()
     })
   })
 })
