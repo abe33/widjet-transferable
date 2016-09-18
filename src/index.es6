@@ -101,6 +101,7 @@ widgets.define('drag-source', (el, options = {}) => {
             potentialTarget.classList.remove('drop')
             potentialTargetSubscription.dispose()
             target = null
+            placeholder = null
           })
         ])
       }))
@@ -124,9 +125,9 @@ widgets.define('drag-source', (el, options = {}) => {
       target.classList.remove('drop')
       target.dropHandle(transferable, matchingFlavors(flavors, target), targetIndex, el)
       detachNode(placeholder)
+      placeholder = null
+      target = null
     } else {
-      if (placeholder) { detachNode(placeholder) }
-
       if (keepSource) {
         detachNode(dragged)
       } else if (originalParent) {
