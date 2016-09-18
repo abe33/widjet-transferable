@@ -17,3 +17,13 @@ import 'widjet-transferable'
 widgets('drag-source', '[data-transferable]', {on: 'load'})
 widgets('drop-target', '[data-drop]', {on: 'load'})
 ```
+
+This package provides two widgets, `drag-source` and `drop-target`.
+
+The former is used to define which elements can be dragged into a page and how their drag and drop gesture will be handled.
+
+The latter is used to define the places where dragged elements can be dropped and what to do on drop.
+
+### Drag Sources
+
+### Drop Targets
