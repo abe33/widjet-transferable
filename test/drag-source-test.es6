@@ -2,7 +2,7 @@ import expect from 'expect.js'
 import sinon from 'sinon'
 import jsdom from 'mocha-jsdom'
 import widgets from 'widjet'
-import {nodeIndex} from 'widjet-utils'
+import {nodeIndex, merge} from 'widjet-utils'
 
 import {asDataAttrs} from './helpers/utils'
 import {mousedown, mousemove, mouseup, mouseover, mouseout, objectCenterCoordinates} from './helpers/events'
@@ -14,7 +14,7 @@ describe('drag source', () => {
 
   let [dragSource, dropTarget, container, dragged] = []
 
-  function buildDragContext (dropAttrs = {}, dragAttrs = {}, extraMarkup = '') {
+  function buildDragContext (dropAttrs = {}, dragAttrs = {}, {extraMarkup, extraDragOptions, extraDropOptions} = {}) {
     const dropTargetContent = dropAttrs.content || ''
     const dragSourceContent = dragAttrs.content || 'content'
     delete dropAttrs.content
@@ -25,11 +25,11 @@ describe('drag source', () => {
       <div data-drop ${asDataAttrs(dropAttrs)}>${dropTargetContent}</div>
       <div ${asDataAttrs(dragAttrs)}>${dragSourceContent}</div>
     </div>
-    ${extraMarkup}
+    ${extraMarkup || ''}
     `
 
-    widgets('drop-target', '[data-drop]', {on: 'init'})
-    widgets('drag-source', '[data-transferable]', {on: 'init'})
+    widgets('drop-target', '[data-drop]', merge({on: 'init'}, extraDropOptions || {}))
+    widgets('drag-source', '[data-transferable]', merge({on: 'init'}, extraDragOptions || {}))
 
     container = document.querySelector('.container')
     dragSource = document.querySelector('[data-transferable]')
@@ -257,9 +257,11 @@ describe('drag source', () => {
     describe('with mismatching flavors', () => {
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler', flavors: '{foo}'
+          handle: 'handler',
+          flavors: '{foo}'
         }, {
-          transferable: 'foo', flavors: '{bar}'
+          transferable: 'foo',
+          flavors: '{bar}'
         })
       })
 
@@ -297,9 +299,11 @@ describe('drag source', () => {
     describe('with one matching flavors', () => {
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler', flavors: '{foo},{bar}'
+          handle: 'handler',
+          flavors: '{foo},{bar}'
         }, {
-          transferable: 'foo', flavors: '{bar},{baz}'
+          transferable: 'foo',
+          flavors: '{bar},{baz}'
         })
       })
 
@@ -341,7 +345,13 @@ describe('drag source', () => {
   describe('with the data-grip attribute', () => {
     let grip
     beforeEach(() => {
-      buildDragContext({handle: 'handler'}, {transferable: 'foo', content: '<div class="grip"></div>', grip: '.grip'})
+      buildDragContext({
+        handle: 'handler'
+      }, {
+        transferable: 'foo',
+        content: '<div class="grip"></div>',
+        grip: '.grip'
+      })
 
       grip = document.querySelector('.grip')
     })
@@ -368,8 +378,11 @@ describe('drag source', () => {
       buildDragContext({
         handle: 'handler'
       }, {
-        transferable: 'foo', 'image-source': '.source'
-      }, '<div class="source"></div>')
+        transferable: 'foo',
+        'image-source': '.source'
+      }, {
+        extraMarkup: '<div class="source"></div>'
+      })
 
       originalSource = document.querySelector('.source')
 
@@ -389,7 +402,8 @@ describe('drag source', () => {
       buildDragContext({
         handle: 'handler'
       }, {
-        transferable: 'foo', image: '<div class=\'source\'></div>'
+        transferable: 'foo',
+        image: '<div class=\'source\'></div>'
       })
 
       startDrag(dragSource)
@@ -428,7 +442,9 @@ describe('drag source', () => {
         }, {
           transferable: 'foo',
           'dnd-placeholder': '.source'
-        }, '<div class="source"></div>')
+        }, {
+          extraMarkup: '<div class="source"></div>'
+        })
 
         startDrag(dragSource)
         dragOver(dropTarget)
@@ -436,6 +452,31 @@ describe('drag source', () => {
 
       it('clones the provided element', () => {
         expect(getPlaceholder().innerHTML).to.eql('<div class="source"></div>')
+      })
+    })
+
+    describe('set to a javascript function', () => {
+      let placeholderHandle
+      beforeEach(() => {
+        placeholderHandle = sinon.spy()
+        buildDragContext({
+          handle: 'handler',
+          flavors: '{foo},{bar}'
+        }, {
+          transferable: 'foo',
+          flavors: '{baz},{bar}',
+          'dnd-placeholder': 'function:placeholderHandle'
+        }, {
+          extraMarkup: '<div class="source"></div>',
+          extraDragOptions: {placeholderHandle}
+        })
+
+        startDrag(dragSource)
+        dragOver(dropTarget)
+      })
+
+      it('calls the function with the drag source and drop target', () => {
+        expect(placeholderHandle.calledWith(dragSource, dropTarget, ['{bar}'])).to.be(true)
       })
     })
   })
