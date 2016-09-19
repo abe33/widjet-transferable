@@ -199,7 +199,7 @@ describe('drag source', () => {
   describe('dragging the source itself', () => {
     describe('without any flavors', () => {
       beforeEach(() => {
-        buildDragContext({handle: 'handler'}, {transferable: 'foo'})
+        buildDragContext({ondrop: 'handler'}, {transferable: 'foo'})
       })
 
       describe('starting a drag and drop gesture', () => {
@@ -257,7 +257,7 @@ describe('drag source', () => {
     describe('with mismatching flavors', () => {
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler',
+          ondrop: 'handler',
           flavors: '{foo}'
         }, {
           transferable: 'foo',
@@ -299,7 +299,7 @@ describe('drag source', () => {
     describe('with one matching flavors', () => {
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler',
+          ondrop: 'handler',
           flavors: '{foo},{bar}'
         }, {
           transferable: 'foo',
@@ -331,7 +331,7 @@ describe('drag source', () => {
 
   describe('dragging a source with the data-keep attribute', () => {
     beforeEach(() => {
-      buildDragContext({handle: 'handler'}, {transferable: 'foo', keep: 1})
+      buildDragContext({ondrop: 'handler'}, {transferable: 'foo', keep: 1})
       startDrag(dragSource)
     })
 
@@ -346,7 +346,7 @@ describe('drag source', () => {
     let grip
     beforeEach(() => {
       buildDragContext({
-        handle: 'handler'
+        ondrop: 'handler'
       }, {
         transferable: 'foo',
         content: '<div class="grip"></div>',
@@ -376,7 +376,7 @@ describe('drag source', () => {
     let originalSource
     beforeEach(() => {
       buildDragContext({
-        handle: 'handler'
+        ondrop: 'handler'
       }, {
         transferable: 'foo',
         'image-source': '.source'
@@ -400,7 +400,7 @@ describe('drag source', () => {
   describe('dragging a source with the data-image attribute', () => {
     beforeEach(() => {
       buildDragContext({
-        handle: 'handler'
+        ondrop: 'handler'
       }, {
         transferable: 'foo',
         image: '<div class=\'source\'></div>'
@@ -420,7 +420,7 @@ describe('drag source', () => {
     describe('set to clone', () => {
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler'
+          ondrop: 'handler'
         }, {
           transferable: 'foo',
           'dnd-placeholder': 'clone'
@@ -438,7 +438,7 @@ describe('drag source', () => {
     describe('set to a selector', () => {
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler'
+          ondrop: 'handler'
         }, {
           transferable: 'foo',
           'dnd-placeholder': '.source'
@@ -460,7 +460,7 @@ describe('drag source', () => {
       beforeEach(() => {
         placeholderHandle = sinon.spy()
         buildDragContext({
-          handle: 'handler',
+          ondrop: 'handler',
           flavors: '{foo},{bar}'
         }, {
           transferable: 'foo',
@@ -487,7 +487,7 @@ describe('drag source', () => {
 
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler',
+          ondrop: 'handler',
           content: '<div class="block"></div><div class="block"></div>'
         }, {
           transferable: 'foo'
@@ -550,7 +550,7 @@ describe('drag source', () => {
 
       beforeEach(() => {
         buildDragContext({
-          handle: 'handler',
+          ondrop: 'handler',
           content: '<div class="block"></div><div class="block"></div>',
           'horizontal-drag': true
         }, {

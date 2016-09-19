@@ -6,13 +6,13 @@ const ANY_FLAVOR = '{all}'
 const isAnyFlavor = f => f === ANY_FLAVOR
 
 widgets.define('drop-target', (el, options) => {
-  const handler = options[el.getAttribute('data-handle')]
+  const handler = options[el.getAttribute('data-ondrop')]
 
   if (!handler) {
-    throw new Error('Cannot create a drop target without a handler function')
+    throw new Error('Cannot create a drop target without a ondrop function')
   }
 
-  el.dropHandle = (...args) => { handler.call(el, ...args) }
+  el.drop = (...args) => { handler.call(el, ...args) }
 })
 
 widgets.define('drag-source', (el, options = {}) => {
@@ -123,7 +123,10 @@ widgets.define('drag-source', (el, options = {}) => {
       }
 
       target.classList.remove('drop')
-      target.dropHandle(transferable, matchingFlavors(flavors, target), targetIndex, el)
+      if (target.drop) {
+        target.drop(transferable, matchingFlavors(flavors, target), targetIndex, el)
+      }
+
       detachNode(placeholder)
       placeholder = null
       target = null

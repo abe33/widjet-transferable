@@ -8,7 +8,7 @@ import '../src/index'
 describe('drop targets', () => {
   jsdom()
 
-  describe('without a handler method defined', () => {
+  describe('without a ondrop method defined', () => {
     beforeEach(() => {
       document.body.innerHTML = '<div data-drop></div>'
     })
@@ -20,9 +20,9 @@ describe('drop targets', () => {
     })
   })
 
-  describe('with an undefined handler method', () => {
+  describe('with an undefined ondrop method', () => {
     beforeEach(() => {
-      document.body.innerHTML = '<div data-drop data-handle="foo"></div>'
+      document.body.innerHTML = '<div data-drop data-ondrop="foo"></div>'
     })
 
     it('raises an exception', () => {
@@ -32,11 +32,11 @@ describe('drop targets', () => {
     })
   })
 
-  describe('with a defined handler method', () => {
+  describe('with a defined ondrop method', () => {
     let handler
 
     beforeEach(() => {
-      document.body.innerHTML = '<div data-drop data-handle="handler"></div>'
+      document.body.innerHTML = '<div data-drop data-ondrop="handler"></div>'
 
       handler = sinon.spy()
     })
@@ -46,7 +46,7 @@ describe('drop targets', () => {
 
       const element = document.querySelector('[data-drop]')
 
-      element.dropHandle()
+      element.drop()
 
       expect(handler.called).to.be.ok()
     })
