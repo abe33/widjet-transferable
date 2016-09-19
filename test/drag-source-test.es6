@@ -15,9 +15,14 @@ describe('drag source', () => {
   let [dragSource, dropTarget, container, dragged, handler] = []
 
   function buildDragContext (dropAttrs = {}, dragAttrs = {}, {extraMarkup, extraDragOptions, extraDropOptions} = {}) {
+    const dropSelector = dropAttrs.selector || '[data-drop]'
     const dropTargetContent = dropAttrs.content || ''
-    const dragSourceContent = dragAttrs.content || 'content'
+    delete dropAttrs.selector
     delete dropAttrs.content
+
+    const dragSelector = dragAttrs.selector || '[data-transferable]'
+    const dragSourceContent = dragAttrs.content || 'content'
+    delete dragAttrs.selector
     delete dragAttrs.content
 
     document.body.innerHTML = `
@@ -30,12 +35,12 @@ describe('drag source', () => {
 
     handler = sinon.spy()
 
-    widgets('drop-target', '[data-drop]', merge({on: 'init', handler}, extraDropOptions || {}))
-    widgets('drag-source', '[data-transferable]', merge({on: 'init'}, extraDragOptions || {}))
+    widgets('drop-target', dropSelector, merge({on: 'init', handler}, extraDropOptions || {}))
+    widgets('drag-source', dragSelector, merge({on: 'init'}, extraDragOptions || {}))
 
     container = document.querySelector('.container')
-    dragSource = document.querySelector('[data-transferable]')
-    dropTarget = document.querySelector('[data-drop]')
+    dragSource = document.querySelector(dragSelector)
+    dropTarget = document.querySelector(dropSelector)
   }
 
   function getPlaceholder () {
@@ -344,12 +349,31 @@ describe('drag source', () => {
         })
       })
 
-      it('calls the specified functino to get the transferable data', () => {
+      it('calls the specified function to get the transferable data', () => {
         startDrag(dragSource)
         dragOver(dropTarget)
         drop()
 
         expect(transferableFunction.calledWith(dragSource, ['{bar}'])).to.be.ok()
+        expect(handler.called).to.be.ok()
+      })
+    })
+
+    describe('with no transferable data', () => {
+      beforeEach(() => {
+        buildDragContext({
+          ondrop: 'handler'
+        }, {
+          selector: '[data-source]',
+          source: 'foo'
+        })
+      })
+
+      it('still allows to perform a drag and drop', () => {
+        startDrag(dragSource)
+        dragOver(dropTarget)
+        drop()
+
         expect(handler.called).to.be.ok()
       })
     })

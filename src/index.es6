@@ -200,7 +200,7 @@ widgets.define('drag-source', (el, options = {}) => {
 })
 
 function getTransferable (source, options, flavors) {
-  const transferable = source.getAttribute('data-transferable')
+  const transferable = source.getAttribute('data-transferable') || ''
 
   if (transferable.indexOf('function:') === 0) {
     const transferableFunction = options[transferable.split(':')[1]]
