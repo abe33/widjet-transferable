@@ -400,9 +400,14 @@ describe('drag source', () => {
     })
   })
 
-  describe('dragging a source with the data-keep attribute', () => {
+  describe('dragging a source with the data-keep-source attribute', () => {
     beforeEach(() => {
-      buildDragContext({ondrop: 'handler'}, {transferable: 'foo', keep: 1})
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'keep-source': 1
+      })
       startDrag(dragSource)
     })
 
