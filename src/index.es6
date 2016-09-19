@@ -39,7 +39,7 @@ widgets.define('drag-source', (el, options = {}) => {
     ? dropSelector
     : flavors.map(f => `${dropSelector}[data-flavors*='${f}']`).join(',')
 
-  const keepSource = el.getAttribute('data-keep-source')
+  const keepSource = el.hasAttribute('data-keep-source')
   const noDragOffset = el.hasAttribute('data-no-drag-offset')
   const gripSelector = el.getAttribute('data-grip')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
@@ -57,10 +57,10 @@ widgets.define('drag-source', (el, options = {}) => {
       y: originalPos.top - e.pageY
     }
 
+    if (!keepSource) { detachNode(el) }
+
     dragContainer.body.appendChild(dragged)
     dragContainer.body.classList.add('dragging')
-
-    if (hasTransferableImage(el)) { detachNode(el) }
 
     potentialTargets = asArray(dropContainer.querySelectorAll(targetSelector))
 
@@ -252,7 +252,7 @@ function hasTransferableImage (source) {
 }
 
 function getDraggedElement (source, container) {
-  const keepSource = source.getAttribute('data-keep-source')
+  const keepSource = source.hasAttribute('data-keep-source')
   const transferableImageSource = source.hasAttribute('data-image-source')
     ? container.querySelector(source.getAttribute('data-image-source'))
     : null

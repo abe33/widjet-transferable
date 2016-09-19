@@ -400,24 +400,6 @@ describe('drag source', () => {
     })
   })
 
-  describe('dragging a source with the data-keep-source attribute', () => {
-    beforeEach(() => {
-      buildDragContext({
-        ondrop: 'handler'
-      }, {
-        transferable: 'foo',
-        'keep-source': 1
-      })
-      startDrag(dragSource)
-    })
-
-    it('clones the source', () => {
-      expect(dragged).not.to.be(dragSource)
-      expect(dragged.nodeName).to.eql(dragSource.nodeName)
-      expect(dragged.textContent).to.eql(dragSource.textContent)
-    })
-  })
-
   describe('with the data-grip attribute', () => {
     let grip
     beforeEach(() => {
@@ -448,6 +430,24 @@ describe('drag source', () => {
     })
   })
 
+  describe('dragging a source with the data-keep-source attribute', () => {
+    beforeEach(() => {
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'keep-source': true
+      })
+      startDrag(dragSource)
+    })
+
+    it('clones the source', () => {
+      expect(dragged).not.to.be(dragSource)
+      expect(dragged.nodeName).to.eql(dragSource.nodeName)
+      expect(dragged.textContent).to.eql(dragSource.textContent)
+    })
+  })
+
   describe('dragging a source with the data-image-source attribute', () => {
     let originalSource
     beforeEach(() => {
@@ -465,9 +465,46 @@ describe('drag source', () => {
       startDrag(dragSource)
     })
 
+    it('removes the source from the DOM', () => {
+      expect(dragSource.parentNode).to.be(null)
+    })
+
     it('clones the provided image source', () => {
       expect(dragged).not.to.be(dragSource)
       expect(dragged).not.to.be(originalSource)
+      expect(dragged.nodeName).to.eql('DIV')
+      expect(dragged.classList.contains('source')).to.be.ok()
+    })
+
+    describe('aborting the drag gesture', () => {
+      beforeEach(() => { drop() })
+
+      it('put back the source in the DOM', () => {
+        expect(dragSource.parentNode).not.to.be(null)
+      })
+    })
+  })
+
+  describe('dragging a source with the data-keep-source and data-image-source attributes', () => {
+    beforeEach(() => {
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'keep-source': true,
+        'image-source': '.source'
+      }, {
+        extraMarkup: '<div class="source"></div>'
+      })
+      startDrag(dragSource)
+    })
+
+    it('does not remove the source from the DOM', () => {
+      expect(dragSource.parentNode).not.to.be(null)
+    })
+
+    it('clones the provided image source', () => {
+      expect(dragged).not.to.be(dragSource)
       expect(dragged.nodeName).to.eql('DIV')
       expect(dragged.classList.contains('source')).to.be.ok()
     })
@@ -483,6 +520,42 @@ describe('drag source', () => {
       })
 
       startDrag(dragSource)
+    })
+
+    it('removes the source from the DOM', () => {
+      expect(dragSource.parentNode).to.be(null)
+    })
+
+    it('clones the provided image source', () => {
+      expect(dragged).not.to.be(dragSource)
+      expect(dragged.nodeName).to.eql('DIV')
+      expect(dragged.classList.contains('source')).to.be.ok()
+    })
+
+    describe('aborting the drag gesture', () => {
+      beforeEach(() => { drop() })
+
+      it('put back the source in the DOM', () => {
+        expect(dragSource.parentNode).not.to.be(null)
+      })
+    })
+  })
+
+  describe('dragging a source with the data-keep-source and data-image attributes', () => {
+    beforeEach(() => {
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'keep-source': true,
+        image: '<div class=\'source\'></div>'
+      })
+
+      startDrag(dragSource)
+    })
+
+    it('does not remove the source from the DOM', () => {
+      expect(dragSource.parentNode).not.to.be(null)
     })
 
     it('clones the provided image source', () => {
