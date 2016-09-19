@@ -355,7 +355,7 @@ describe('drag source', () => {
         drop()
 
         expect(transferableFunction.calledWith(dragSource, ['{bar}'])).to.be.ok()
-        expect(handler.called).to.be.ok()
+        expect(handler.calledWith(undefined, ['{bar}'], 0, dragSource)).to.be.ok()
       })
     })
 
@@ -374,7 +374,28 @@ describe('drag source', () => {
         dragOver(dropTarget)
         drop()
 
-        expect(handler.called).to.be.ok()
+        expect(handler.calledWith(null, ['{all}'], 0, dragSource)).to.be.ok()
+      })
+    })
+
+    describe('with a custom transferable attribute', () => {
+      beforeEach(() => {
+        buildDragContext({
+          ondrop: 'handler'
+        }, {
+          selector: '[data-source]',
+          source: 'foo'
+        }, {
+          extraDragOptions: { transferableSource: 'data-source' }
+        })
+      })
+
+      it('still allows to perform a drag and drop', () => {
+        startDrag(dragSource)
+        dragOver(dropTarget)
+        drop()
+
+        expect(handler.calledWith('foo', ['{all}'], 0, dragSource)).to.be.ok()
       })
     })
   })
