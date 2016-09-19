@@ -327,6 +327,32 @@ describe('drag source', () => {
         })
       })
     })
+
+    describe('with a custom transferable function', () => {
+      let transferableFunction
+      beforeEach(() => {
+        transferableFunction = sinon.spy()
+
+        buildDragContext({
+          ondrop: 'handler',
+          flavors: '{foo},{bar}'
+        }, {
+          transferable: 'function:getTransferable',
+          flavors: '{bar},{baz}'
+        }, {
+          extraDragOptions: {getTransferable: transferableFunction}
+        })
+      })
+
+      it('calls the specified functino to get the transferable data', () => {
+        startDrag(dragSource)
+        dragOver(dropTarget)
+        drop()
+
+        expect(transferableFunction.calledWith(dragSource, ['{bar}'])).to.be.ok()
+        expect(handler.called).to.be.ok()
+      })
+    })
   })
 
   describe('dragging a source with the data-keep attribute', () => {

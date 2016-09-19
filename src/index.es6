@@ -41,7 +41,6 @@ widgets.define('drag-source', (el, options = {}) => {
 
   const keepSource = el.getAttribute('data-keep')
   const noDragOffset = el.hasAttribute('data-no-drag-offset')
-  const transferable = el.getAttribute('data-transferable').toString()
   const gripSelector = el.getAttribute('data-grip')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
   const placeholderContent = getPlaceholderContent(el, options)
@@ -124,7 +123,13 @@ widgets.define('drag-source', (el, options = {}) => {
 
       target.classList.remove('drop')
       if (target.drop) {
-        target.drop(transferable, matchingFlavors(flavors, target), targetIndex, el)
+        const matchedFlavors = matchingFlavors(flavors, target)
+        target.drop(
+          getTransferable(el, options, matchedFlavors),
+          matchedFlavors,
+          targetIndex,
+          el
+        )
       }
 
       detachNode(placeholder)
@@ -194,8 +199,21 @@ widgets.define('drag-source', (el, options = {}) => {
   })
 })
 
-function getFlavors (el) {
-  return (el.getAttribute('data-flavors') || ANY_FLAVOR).split(',')
+function getTransferable (source, options, flavors) {
+  const transferable = source.getAttribute('data-transferable')
+
+  if (transferable.indexOf('function:') === 0) {
+    const transferableFunction = options[transferable.split(':')[1]]
+    return typeof transferableFunction === 'function'
+    ? transferableFunction(source, flavors)
+    : null
+  } else {
+    return transferable
+  }
+}
+
+function getFlavors (source) {
+  return (source.getAttribute('data-flavors') || ANY_FLAVOR).split(',')
 }
 
 function matchingFlavors (flavors, target) {
@@ -227,26 +245,27 @@ function getPlaceholderContent (dragSource, options) {
   return ''
 }
 
-function hasTransferableImage (el) {
-  return el.hasAttribute('data-image-source') || el.hasAttribute('data-image')
+function hasTransferableImage (source) {
+  return source.hasAttribute('data-image-source') ||
+         source.hasAttribute('data-image')
 }
 
-function getDraggedElement (el, container) {
-  const keepSource = el.getAttribute('data-keep')
-  const transferableImageSource = el.hasAttribute('data-image-source')
-    ? container.querySelector(el.getAttribute('data-image-source'))
+function getDraggedElement (source, container) {
+  const keepSource = source.getAttribute('data-keep')
+  const transferableImageSource = source.hasAttribute('data-image-source')
+    ? container.querySelector(source.getAttribute('data-image-source'))
     : null
-  const transferableImage = (el.hasAttribute('data-image'))
-    ? getNode(el.getAttribute('data-image'))
+  const transferableImage = (source.hasAttribute('data-image'))
+    ? getNode(source.getAttribute('data-image'))
     : null
   const dragged = transferableImage || (transferableImageSource
     ? cloneNode(transferableImageSource)
-    : (keepSource ? cloneNode(el) : el)
+    : (keepSource ? cloneNode(source) : source)
   )
 
   if (!transferableImage && !transferableImageSource) {
-    dragged.style.width = el.clientWidth + 'px'
-    dragged.style.height = el.clientHeight + 'px'
+    dragged.style.width = source.clientWidth + 'px'
+    dragged.style.height = source.clientHeight + 'px'
   }
 
   dragged.style.position = 'absolute'
