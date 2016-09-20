@@ -80,6 +80,8 @@ describe('drag source', () => {
           } else {
             return getBox(index * height, 0, width, height)
           }
+        } else if (this.classList.contains('container')) {
+          return getBox(0, 0, 300, 300)
         } else {
           const length = this.children.length
 
@@ -482,6 +484,30 @@ describe('drag source', () => {
         expect(dragged.style.top).to.eql('')
         expect(dragged.style.left).to.be('50px')
       })
+    })
+  })
+
+  describe('with the data-lock-in-parent attribute', () => {
+    withFakeBoundingClientRects('vertical')
+
+    beforeEach(() => {
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'lock-in-parent': '.container'
+      })
+      startDrag(dragSource)
+    })
+
+    it('locks the dragged element in the bounds of the specified parent', () => {
+      mousemove(dragSource, {x: 500, y: 500})
+      expect(dragged.style.top).to.eql('200px')
+      expect(dragged.style.left).to.be('200px')
+
+      mousemove(dragSource, {x: -500, y: -500})
+      expect(dragged.style.top).to.eql('0px')
+      expect(dragged.style.left).to.be('0px')
     })
   })
 

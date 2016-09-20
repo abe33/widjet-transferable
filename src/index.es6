@@ -1,5 +1,5 @@
 import widgets from 'widjet'
-import {asArray, cloneNode, getNode, nodeIndex, detachNode} from 'widjet-utils'
+import {asArray, cloneNode, getNode, nodeIndex, detachNode, parent} from 'widjet-utils'
 import {CompositeDisposable, DisposableEvent} from 'widjet-disposables'
 
 const PLACEHOLDER_CLASS = 'dnd-placeholder'
@@ -46,6 +46,8 @@ widgets.define('drag-source', (el, options = {}) => {
   const gripSelector = el.getAttribute('data-grip')
   const lockX = el.hasAttribute('data-lock-x')
   const lockY = el.hasAttribute('data-lock-y')
+  const lockInParent = el.hasAttribute('data-lock-in-parent') &&
+                       parent(el, el.getAttribute('data-lock-in-parent'))
   const grip = gripSelector ? el.querySelector(gripSelector) : el
   const placeholderContent = getPlaceholderContent(el, options)
 
@@ -166,6 +168,8 @@ widgets.define('drag-source', (el, options = {}) => {
 
     if (!lockX) { dragged.style.left = x + 'px' }
     if (!lockY) { dragged.style.top = y + 'px' }
+
+    if (lockInParent) { adjustInParent(dragged, lockInParent) }
   }
 
   return new DisposableEvent(grip, 'mousedown', (e) => {
@@ -338,5 +342,26 @@ function positionFinder ({target, horizontalDrag, placeholder}) {
         target.appendChild(placeholder)
       }
     }
+  }
+}
+
+function adjustInParent (dragged, parent) {
+  const parentBounds = parent.getBoundingClientRect()
+  const draggedBounds = dragged.getBoundingClientRect()
+
+  if (draggedBounds.top < parentBounds.top) {
+    dragged.style.top = `${parentBounds.top}px`
+  }
+
+  if (draggedBounds.left < parentBounds.left) {
+    dragged.style.left = `${parentBounds.left}px`
+  }
+
+  if (draggedBounds.right > parentBounds.right) {
+    dragged.style.left = `${parentBounds.right - draggedBounds.width}px`
+  }
+
+  if (draggedBounds.bottom > parentBounds.bottom) {
+    dragged.style.top = `${parentBounds.bottom - draggedBounds.height}px`
   }
 }
