@@ -203,19 +203,29 @@ describe('drag source', () => {
 
   describe('dragging the source itself', () => {
     describe('without any flavors', () => {
+      withFakeBoundingClientRects('vertical')
+
       beforeEach(() => {
         buildDragContext({ondrop: 'handler'}, {transferable: 'foo'})
       })
 
       describe('starting a drag and drop gesture', () => {
-        beforeEach(() => { startDrag(dragSource) })
+        beforeEach(() => {
+          startDrag(dragSource)
+          mousemove(dragSource, {x: 150, y: 150})
+        })
+
+        expectStartedDrag()
+        expectAcceptedDropTarget()
 
         it('moves the drag source as a child of body', () => {
           expect(dragSource.parentNode).to.be(document.body)
         })
 
-        expectStartedDrag()
-        expectAcceptedDropTarget()
+        it('moves the dragged element', () => {
+          expect(dragged.style.top).to.eql('50px')
+          expect(dragged.style.left).to.eql('50px')
+        })
 
         describe('when hovering the drop target', () => {
           beforeEach(() => { dragOver(dropTarget) })
@@ -396,6 +406,81 @@ describe('drag source', () => {
         drop()
 
         expect(handler.calledWith('foo', ['{all}'], 0, dragSource)).to.be.ok()
+      })
+    })
+  })
+
+  describe('with the data-no-drag-offset attribute', () => {
+    withFakeBoundingClientRects('vertical')
+
+    beforeEach(() => {
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'no-drag-offset': true
+      })
+    })
+
+    describe('starting a drag and drop gesture', () => {
+      beforeEach(() => {
+        startDrag(dragSource)
+        mousemove(dragSource, {x: 150, y: 150})
+      })
+
+      it('moves the dragged element', () => {
+        expect(dragged.style.top).to.eql('150px')
+        expect(dragged.style.left).to.eql('150px')
+      })
+    })
+  })
+
+  describe('with the data-lock-x attribute', () => {
+    withFakeBoundingClientRects('vertical')
+
+    beforeEach(() => {
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'lock-x': true
+      })
+    })
+
+    describe('starting a drag and drop gesture', () => {
+      beforeEach(() => {
+        startDrag(dragSource)
+        mousemove(dragSource, {x: 150, y: 150})
+      })
+
+      it('moves the dragged element only on the y axis', () => {
+        expect(dragged.style.top).to.eql('50px')
+        expect(dragged.style.left).to.be('')
+      })
+    })
+  })
+
+  describe('with the data-lock-y attribute', () => {
+    withFakeBoundingClientRects('vertical')
+
+    beforeEach(() => {
+      buildDragContext({
+        ondrop: 'handler'
+      }, {
+        transferable: 'foo',
+        'lock-y': true
+      })
+    })
+
+    describe('starting a drag and drop gesture', () => {
+      beforeEach(() => {
+        startDrag(dragSource)
+        mousemove(dragSource, {x: 150, y: 150})
+      })
+
+      it('moves the dragged element only on the x axis', () => {
+        expect(dragged.style.top).to.eql('')
+        expect(dragged.style.left).to.be('50px')
       })
     })
   })

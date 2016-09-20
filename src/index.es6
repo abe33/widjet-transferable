@@ -44,6 +44,8 @@ widgets.define('drag-source', (el, options = {}) => {
   const keepSource = el.hasAttribute('data-keep-source')
   const noDragOffset = el.hasAttribute('data-no-drag-offset')
   const gripSelector = el.getAttribute('data-grip')
+  const lockX = el.hasAttribute('data-lock-x')
+  const lockY = el.hasAttribute('data-lock-y')
   const grip = gripSelector ? el.querySelector(gripSelector) : el
   const placeholderContent = getPlaceholderContent(el, options)
 
@@ -162,8 +164,8 @@ widgets.define('drag-source', (el, options = {}) => {
       y += dragOffset.y
     }
 
-    dragged.style.left = x + 'px'
-    dragged.style.top = y + 'px'
+    if (!lockX) { dragged.style.left = x + 'px' }
+    if (!lockY) { dragged.style.top = y + 'px' }
   }
 
   return new DisposableEvent(grip, 'mousedown', (e) => {
