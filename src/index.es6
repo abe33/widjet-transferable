@@ -2,6 +2,7 @@ import widgets from 'widjet'
 import {asArray, cloneNode, getNode, nodeIndex, detachNode} from 'widjet-utils'
 import {CompositeDisposable, DisposableEvent} from 'widjet-disposables'
 
+const PLACEHOLDER_CLASS = 'dnd-placeholder'
 const ANY_FLAVOR = '{all}'
 const isAnyFlavor = f => f === ANY_FLAVOR
 
@@ -31,6 +32,7 @@ widgets.define('drag-source', (el, options = {}) => {
   const dropSelector = options.dropSelector || '[data-drop]'
   const dropContainer = options.dropContainer || document
   const dragContainer = options.dragContainer || document
+  const dragThreshold = options.dragThreshold || 10
 
   const filterChildren = legitChildrenFilter(options)
 
@@ -70,10 +72,11 @@ widgets.define('drag-source', (el, options = {}) => {
       potentialTarget.classList.add('accept-drop')
 
       potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseover', (e) => {
-        placeholder = getPlaceholder(typeof placeholderContent === 'function'
+        const content = typeof placeholderContent === 'function'
           ? placeholderContent(el, potentialTarget, matchingFlavors(flavors, potentialTarget))
           : placeholderContent
-        )
+
+        placeholder = getPlaceholder(content, options)
 
         potentialTarget.classList.add('drop')
         potentialTarget.appendChild(placeholder)
@@ -187,7 +190,7 @@ widgets.define('drag-source', (el, options = {}) => {
           let difX = e.pageX - start.x
           let difY = e.pageY - start.y
 
-          if (Math.abs(Math.sqrt((difX * difX) + (difY * difY))) > 10) {
+          if (Math.abs(Math.sqrt((difX * difX) + (difY * difY))) > dragThreshold) {
             startDrag(e)
             drag(e)
           }
@@ -225,8 +228,9 @@ function matchingFlavors (flavors, target) {
     : flavors.filter(f => dropFlavor.indexOf(f) !== -1)
 }
 
-function getPlaceholder (content) {
-  return getNode(`<div class='dnd-placeholder'>${content}</div>`)
+function getPlaceholder (content, options) {
+  const cls = options.placeholderClass || PLACEHOLDER_CLASS
+  return getNode(`<div class='${cls}'>${content}</div>`)
 }
 
 function getPlaceholderContent (dragSource, options) {
@@ -276,7 +280,8 @@ function getDraggedElement (source, container) {
 }
 
 function legitChildrenFilter (o) {
-  const classes = ['.dnd-placeholder'].concat(o.excludedChildrenClasses || [])
+  const cls = o.placeholderClass || PLACEHOLDER_CLASS
+  const classes = [`.${cls}`].concat(o.excludedChildrenClasses || [])
   const sel = classes.map(c => `:not(${c})`).join('')
 
   return children => asArray(children).filter(child => child.matches(sel))
