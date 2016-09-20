@@ -91,14 +91,17 @@ Attribute|Type|Description
 `data-image-source`|`selector`|When defined with a cSS selector, the first element matched by the query will be cloned and used instead of the source as the image for the drag gesture.
 `data-dnd-placeholder`|`selector`, `clone` or `function:<name>`|<p>When dragged above a drop target, a placeholder will be added in that target, allowing to present to the user information about the drop, such as the position of the drop if the target already has some children.</p><p>If a CSS selector is provided, the first element to match will be cloned in the placeholder.</p><p>If the value is `clone` the source itself will be cloned and placed in the placeholder.</p><p>Finally, if the value is prefixed with `function:`, the widget will look for a function of the given name on the options object and will call that function with the source, the target and the matching flavors between the two. The function should then returns the HTML content for the placeholder.</p>
 `data-no-drag-offset`|`boolean`|<p>When a drag gesture is started, the initial position of the mouse inside the source is preserved and used as an offset during the drag gesture.</p><p>By setting this attribute, the offset will no longer be applied to the dragged element.</p>
+`data-lock-x`|`boolean`|When present, the x position of the source is leaved unchanged during the drag gesture.
+`data-lock-y`|`boolean`|When present, the y position of the source is leaved unchanged during the drag gesture.
+`data-lock-in-parent`|`selector`|When present, the position of the dragged element will be constrained in the bounds of the first source's parent that matches the specified selector.
 
 ### Options
 
 Option|Type|Description
 ---|---|---
-`dragThreshold`|`integer`|The amount of pixels the mouse needs to move to trigger a drag-and-drop gesture
-`dropSelector`|`selector`|If your drop targets aren't defined using the `data-drop` attribute, this option will let you specify which selector use to retrieve the targets
-`transferableSource`|`string`|If your drag sources doesn't use the `data-transferable` attribute for specifying the transferable data, you can use this option to let the widget know which attribute to use instead
-`placeholderClass`|`string`|The class to use for the placeholder element in a drop target
-`dropContainer`|`HTMLDocument`|In case you want to implement drag-and-drop between a page and an iframe, this option let you specify in which frame the drop targets belong
+`dragThreshold`|`integer`|The amount of pixels the mouse needs to move to trigger a drag-and-drop gesture.
+`dropSelector`|`selector`|If your drop targets aren't defined using the `data-drop` attribute, this option will let you specify which selector use to retrieve the targets.
+`transferableSource`|`string`|If your drag sources doesn't use the `data-transferable` attribute for specifying the transferable data, you can use this option to let the widget know which attribute to use instead.
+`placeholderClass`|`string`|The class to use for the placeholder element in a drop target.
+`dropContainer`|`HTMLDocument`|In case you want to implement drag-and-drop between a page and an iframe, this option let you specify in which frame the drop targets belong.
 `dragContainer`|`HTMLDocument`|In case you want to implement drag-and-drop between a page and an iframe, this option let you specify in which frame the dragged gesture should be performed.
