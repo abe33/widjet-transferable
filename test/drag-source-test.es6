@@ -557,6 +557,17 @@ describe('drag source', () => {
       expect(dragged.nodeName).to.eql(dragSource.nodeName)
       expect(dragged.textContent).to.eql(dragSource.textContent)
     })
+
+    describe('then releasing the mouse', () => {
+      beforeEach(() => {
+        dragOver(dropTarget)
+        drop()
+      })
+
+      it('removes the dragged element from DOM', () => {
+        expect(dragged.parentNode).to.be(null)
+      })
+    })
   })
 
   describe('dragging a source with the data-image-source attribute', () => {
@@ -594,6 +605,17 @@ describe('drag source', () => {
         expect(dragSource.parentNode).not.to.be(null)
       })
     })
+
+    describe('then releasing the mouse', () => {
+      beforeEach(() => {
+        dragOver(dropTarget)
+        drop()
+      })
+
+      it('removes the dragged element from DOM', () => {
+        expect(dragged.parentNode).to.be(null)
+      })
+    })
   })
 
   describe('dragging a source with the data-keep-source and data-image-source attributes', () => {
@@ -618,6 +640,17 @@ describe('drag source', () => {
       expect(dragged).not.to.be(dragSource)
       expect(dragged.nodeName).to.eql('DIV')
       expect(dragged.classList.contains('source')).to.be.ok()
+    })
+
+    describe('then releasing the mouse', () => {
+      beforeEach(() => {
+        dragOver(dropTarget)
+        drop()
+      })
+
+      it('removes the dragged element from DOM', () => {
+        expect(dragged.parentNode).to.be(null)
+      })
     })
   })
 
@@ -650,6 +683,17 @@ describe('drag source', () => {
         expect(dragSource.parentNode).not.to.be(null)
       })
     })
+
+    describe('then releasing the mouse', () => {
+      beforeEach(() => {
+        dragOver(dropTarget)
+        drop()
+      })
+
+      it('removes the dragged element from DOM', () => {
+        expect(dragged.parentNode).to.be(null)
+      })
+    })
   })
 
   describe('dragging a source with the data-keep-source and data-image attributes', () => {
@@ -673,6 +717,17 @@ describe('drag source', () => {
       expect(dragged).not.to.be(dragSource)
       expect(dragged.nodeName).to.eql('DIV')
       expect(dragged.classList.contains('source')).to.be.ok()
+    })
+
+    describe('then releasing the mouse', () => {
+      beforeEach(() => {
+        dragOver(dropTarget)
+        drop()
+      })
+
+      it('removes the dragged element from DOM', () => {
+        expect(dragged.parentNode).to.be(null)
+      })
     })
   })
 
