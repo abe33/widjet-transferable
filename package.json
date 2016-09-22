@@ -4,13 +4,20 @@
   "description": "A drag and drop widget for widjet",
   "main": "lib/index.js",
   "scripts": {
-    "test": "mocha --recursive --compilers js:babel-register test/**/*.es6 test/*.es6",
+    "test": "nyc mocha --recursive --compilers js:babel-register test/**/*.es6 test/*.es6",
     "babel": "babel src --out-dir lib",
     "standard": "standard src/*.es6 test/*.es6",
     "esdoc": "esdoc -c esdoc.json",
     "install": "npm run babel"
   },
-  "keywords": ["widgets", "widget", "web", "widjet", "drag-and-drop", "transferable"],
+  "keywords": [
+    "widgets",
+    "widget",
+    "web",
+    "widjet",
+    "drag-and-drop",
+    "transferable"
+  ],
   "repository": {
     "type": "git",
     "url": "git://github.com/abe33/widjet-transferable.git"
@@ -21,11 +28,13 @@
   "license": "MIT",
   "devDependencies": {
     "babel-eslint": "^4.1.6",
+    "babel-plugin-istanbul": "^2.0.1",
     "babel-register": "^6.3.13",
     "esdoc": "^0.4.0",
     "expect.js": "^0.3.1",
     "mocha": "^2.3.4",
     "mocha-jsdom": "^1.1.0",
+    "nyc": "^8.3.0",
     "sinon": "^1.17.4",
     "standard": "^5.4.1"
   },
@@ -46,6 +55,26 @@
     ]
   },
   "babel": {
-    "presets": ["es2015"]
+    "presets": [
+      "es2015"
+    ],
+    "env": {
+      "test": {
+        "plugins": [
+          "istanbul"
+        ]
+      }
+    }
+  },
+  "nyc": {
+    "include": [
+      "src/*.es6"
+    ],
+    "extension": [
+      ".es6"
+    ],
+    "require": [
+      "babel-register"
+    ]
   }
 }
