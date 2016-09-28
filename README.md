@@ -1,4 +1,4 @@
-# widjet-transferable [![Build Status](https://travis-ci.org/abe33/widjet-transferable.svg?branch=master)](https://travis-ci.org/abe33/widjet-transferable)
+# widjet-transferable [![Build Status](https://travis-ci.org/abe33/widjet-transferable.svg?branch=master)](https://travis-ci.org/abe33/widjet-transferable) [![codecov](https://codecov.io/gh/abe33/widjet-transferable/branch/master/graph/badge.svg)](https://codecov.io/gh/abe33/widjet-transferable)
 
 A drag and drop widget for [widjet](https://github.com/abe33/widjet)
 
