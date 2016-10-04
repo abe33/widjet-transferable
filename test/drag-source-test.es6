@@ -2,10 +2,10 @@ import expect from 'expect.js'
 import sinon from 'sinon'
 import jsdom from 'mocha-jsdom'
 import widgets from 'widjet'
-import {nodeIndex, merge} from 'widjet-utils'
+import {nodeIndex, merge, asDataAttributes} from 'widjet-utils'
 
-import {asDataAttrs} from './helpers/utils'
-import {mousedown, mousemove, mouseup, mouseover, mouseout, objectCenterCoordinates} from './helpers/events'
+import {mousedown, mousemove, mouseup, mouseover, mouseout} from 'widjet-test-utils/events'
+import {objectCenterCoordinates, fakeBoundingClientRects, getBox} from 'widjet-test-utils/dom'
 
 import '../src/index'
 
@@ -27,8 +27,8 @@ describe('drag source', () => {
 
     document.body.innerHTML = `
     <div class="container">
-      <div data-drop ${asDataAttrs(dropAttrs)}>${dropTargetContent}</div>
-      <div ${asDataAttrs(dragAttrs)}>${dragSourceContent}</div>
+      <div data-drop ${asDataAttributes(dropAttrs)}>${dropTargetContent}</div>
+      <div ${asDataAttributes(dragAttrs)}>${dragSourceContent}</div>
     </div>
     ${extraMarkup || ''}
     `
@@ -47,54 +47,38 @@ describe('drag source', () => {
     return dropTarget.querySelector('.dnd-placeholder')
   }
 
-  function getBox (top, left, width, height) {
-    return {
-      top, left,
-      width, height,
-      right: top + width,
-      bottom: top + height
-    }
-  }
-
   function withFakeBoundingClientRects (mode) {
-    let safeGetBoundingClientRect
-    beforeEach(() => {
-      safeGetBoundingClientRect = window.HTMLElement.prototype.getBoundingClientRect
-      window.HTMLElement.prototype.getBoundingClientRect = function () {
-        const width = 100
-        const height = 100
-        if (this.hasAttribute('data-transferable')) {
-          if (this.style.top) {
-            const top = parseInt(this.style.top, 10)
-            const left = parseInt(this.style.left, 10)
+    fakeBoundingClientRects(function () {
+      const width = 100
+      const height = 100
+      if (this.hasAttribute('data-transferable')) {
+        if (this.style.top) {
+          const top = parseInt(this.style.top, 10)
+          const left = parseInt(this.style.left, 10)
 
-            return getBox(top, left, width, height)
-          } else {
-            return getBox(0, 0, width, height)
-          }
-        } else if (this.classList.contains('block') || this.classList.contains('dnd-placeholder')) {
-          const index = nodeIndex(this)
-
-          if (mode === 'horizontal') {
-            return getBox(0, index * width, width, height)
-          } else {
-            return getBox(index * height, 0, width, height)
-          }
-        } else if (this.classList.contains('container')) {
-          return getBox(0, 0, 300, 300)
+          return getBox(top, left, width, height)
         } else {
-          const length = this.children.length
+          return getBox(0, 0, width, height)
+        }
+      } else if (this.classList.contains('block') || this.classList.contains('dnd-placeholder')) {
+        const index = nodeIndex(this)
 
-          if (mode === 'horizontal') {
-            return getBox(0, 0, length * width, height)
-          } else {
-            return getBox(0, 0, width, length * height)
-          }
+        if (mode === 'horizontal') {
+          return getBox(0, index * width, width, height)
+        } else {
+          return getBox(index * height, 0, width, height)
+        }
+      } else if (this.classList.contains('container')) {
+        return getBox(0, 0, 300, 300)
+      } else {
+        const length = this.children.length
+
+        if (mode === 'horizontal') {
+          return getBox(0, 0, length * width, height)
+        } else {
+          return getBox(0, 0, width, length * height)
         }
       }
-    })
-    afterEach(() => {
-      window.HTMLElement.prototype.getBoundingClientRect = safeGetBoundingClientRect
     })
   }
 
