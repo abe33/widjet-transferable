@@ -270,14 +270,31 @@ function getPlaceholderContent (dragSource, options) {
     if (dndPlaceholder === 'clone') {
       return dragSource.outerHTML
     } else if (dndPlaceholder.indexOf('function:') === 0) {
-      const placeholderFunction = options[dndPlaceholder.split(':')[1]]
-      if (placeholderFunction) { return placeholderFunction }
+      return placeholderFromFunction(dndPlaceholder, options)
     } else {
-      const placeholderElement = document.querySelector(dndPlaceholder)
-      if (placeholderElement) { return placeholderElement.outerHTML }
+      return placeholderFromSelector(dndPlaceholder, options)
     }
   }
   return ''
+}
+
+function placeholderFromFunction (dndPlaceholder, options) {
+  const placeholderFunctionName = dndPlaceholder.split(':')[1]
+  const placeholderFunction = options[placeholderFunctionName]
+  if (placeholderFunction) {
+    return placeholderFunction
+  } else {
+    throw new Error(`Unable to find a function named '${placeholderFunctionName}' on options to use as source for the placeholder`)
+  }
+}
+
+function placeholderFromSelector (dndPlaceholder, options) {
+  const placeholderElement = document.querySelector(dndPlaceholder)
+  if (placeholderElement) {
+    return placeholderElement.outerHTML
+  } else {
+    throw new Error(`Unable to find an element matching the selector '${dndPlaceholder}' as source for the placeholder`)
+  }
 }
 
 function hasTransferableImage (source) {

@@ -187,6 +187,21 @@ describe('drag source', () => {
     widgets.release('drop-target')
   })
 
+  describe('when not reaching the drag threshold', () => {
+    withFakeBoundingClientRects('vertical')
+
+    beforeEach(() => {
+      buildDragContext({ondrop: 'handler'}, {transferable: 'foo'})
+      mousedown(dragSource)
+      mousemove(dragSource, {x: 51, y: 51})
+      mouseup(dragSource)
+    })
+
+    it('does not start a drag', () => {
+      expect(document.body.querySelector('.dragged')).to.be(null)
+    })
+  })
+
   describe('dragging the source itself', () => {
     describe('without any flavors', () => {
       withFakeBoundingClientRects('vertical')
@@ -752,6 +767,19 @@ describe('drag source', () => {
       it('clones the provided element', () => {
         expect(getPlaceholder().innerHTML).to.eql('<div class="source"></div>')
       })
+
+      describe('that does not exist', () => {
+        it('raises an exception', () => {
+          expect(() => {
+            buildDragContext({
+              ondrop: 'handler'
+            }, {
+              transferable: 'foo',
+              'dnd-placeholder': '.source'
+            })
+          }).to.throwError()
+        })
+      })
     })
 
     describe('set to a javascript function', () => {
@@ -776,6 +804,19 @@ describe('drag source', () => {
 
       it('calls the function with the drag source and drop target', () => {
         expect(placeholderHandle.calledWith(dragSource, dropTarget, ['{bar}'])).to.be(true)
+      })
+
+      describe('that does not exist', () => {
+        it('raises an exception', () => {
+          expect(() => {
+            buildDragContext({
+              ondrop: 'handler'
+            }, {
+              transferable: 'foo',
+              'dnd-placeholder': 'function:placeholderHandle'
+            })
+          }).to.throwError()
+        })
       })
     })
   })
