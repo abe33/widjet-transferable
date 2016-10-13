@@ -5,7 +5,7 @@ import widgets from 'widjet'
 import {nodeIndex, merge, asDataAttributes} from 'widjet-utils'
 
 import {mousedown, mousemove, mouseup, mouseover, mouseout} from 'widjet-test-utils/events'
-import {objectCenterCoordinates, fakeBoundingClientRects, getBox} from 'widjet-test-utils/dom'
+import {objectCenterCoordinates, fakeBoundingClientRects, getBox, setPageContent, getTestRoot} from 'widjet-test-utils/dom'
 
 import '../src/index'
 
@@ -25,22 +25,22 @@ describe('drag source', () => {
     delete dragAttrs.selector
     delete dragAttrs.content
 
-    document.body.innerHTML = `
+    setPageContent(`
     <div class="container">
       <div data-drop ${asDataAttributes(dropAttrs)}>${dropTargetContent}</div>
       <div ${asDataAttributes(dragAttrs)}>${dragSourceContent}</div>
     </div>
     ${extraMarkup || ''}
-    `
+    `)
 
     handler = sinon.spy()
 
     widgets('drop-target', dropSelector, merge({on: 'init', handler}, extraDropOptions || {}))
     widgets('drag-source', dragSelector, merge({on: 'init'}, extraDragOptions || {}))
 
-    container = document.querySelector('.container')
-    dragSource = document.querySelector(dragSelector)
-    dropTarget = document.querySelector(dropSelector)
+    container = getTestRoot().querySelector('.container')
+    dragSource = getTestRoot().querySelector(dragSelector)
+    dropTarget = getTestRoot().querySelector(dropSelector)
   }
 
   function getPlaceholder () {
@@ -86,7 +86,7 @@ describe('drag source', () => {
     mousedown(source)
     mousemove(source, {x: 100, y: 100})
 
-    dragged = document.querySelector('.dragged')
+    dragged = document.body.querySelector('.dragged')
   }
 
   function dragOver (target, offsets = {}) {
@@ -179,7 +179,7 @@ describe('drag source', () => {
     })
   }
 
-  beforeEach(() => {
+  afterEach(() => {
     dragged = null
     document.body.classList.remove('dragging')
 
@@ -506,7 +506,7 @@ describe('drag source', () => {
         grip: '.grip'
       })
 
-      grip = document.querySelector('.grip')
+      grip = getTestRoot().querySelector('.grip')
     })
 
     describe('dragging the source', () => {
@@ -566,7 +566,7 @@ describe('drag source', () => {
         extraMarkup: '<div class="source"></div>'
       })
 
-      originalSource = document.querySelector('.source')
+      originalSource = getTestRoot().querySelector('.source')
 
       startDrag(dragSource)
     })

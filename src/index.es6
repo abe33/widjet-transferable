@@ -1,6 +1,6 @@
 import widgets from 'widjet'
 import {asArray, cloneNode, getNode, nodeIndex, detachNode, parent} from 'widjet-utils'
-import {CompositeDisposable, DisposableEvent} from 'widjet-disposables'
+import {CompositeDisposable, DisposableEvent, Disposable} from 'widjet-disposables'
 
 const PLACEHOLDER_CLASS = 'dnd-placeholder'
 const ANY_FLAVOR = '{all}'
@@ -26,6 +26,7 @@ widgets.define('drag-source', (options) => {
   let placeholder
   let potentialTargets
   let potentialTargetsSubscriptions
+  let potentialTargetSubscription
   let target
   let windowSubscriptions
 
@@ -92,7 +93,7 @@ widgets.define('drag-source', (options) => {
             target: potentialTarget
           })
 
-          const potentialTargetSubscription = new CompositeDisposable([
+          potentialTargetSubscription = new CompositeDisposable([
             new DisposableEvent(potentialTarget, 'mousemove', (e) => {
               let {pageY: y, pageX: x} = e
 
@@ -109,53 +110,56 @@ widgets.define('drag-source', (options) => {
               potentialTargetSubscription.dispose()
               target = null
               placeholder = null
+              potentialTargetSubscription = null
             })
           ])
         }))
       })
     }
 
-    const stopDrag = (e) => {
+    const endDrag = (e) => {
       dragContainer.body.classList.remove('dragging')
       potentialTargets.forEach(n => n.classList.remove('accept-drop'))
 
-      if (target != null) {
-        const targetIndex = nodeIndex(placeholder)
+      target != null ? performDrop(target) : abortDrag()
+    }
 
-        if (keepSource || hasTransferableImage(el)) {
-          detachNode(dragged)
-        } else {
-          dragged.classList.remove('dragged')
-          dragged.setAttribute('style', '')
-        }
+    const performDrop = (target) => {
+      const targetIndex = nodeIndex(placeholder)
 
-        target.classList.remove('drop')
-        if (target.drop) {
-          const matchedFlavors = matchingFlavors(flavors, target)
-          target.drop(
-            getTransferable(el, options, matchedFlavors),
-            matchedFlavors,
-            targetIndex,
-            el
-          )
-        }
-
-        detachNode(placeholder)
-        placeholder = null
-        target = null
+      if (keepSource || hasTransferableImage(el)) {
+        detachNode(dragged)
       } else {
-        if (keepSource) {
-          detachNode(dragged)
-        } else if (originalParent) {
-          if (hasTransferableImage(el)) { detachNode(dragged) }
+        dragged.classList.remove('dragged')
+        dragged.setAttribute('style', '')
+      }
 
-          const next = originalParent.children[originalIndex]
+      target.classList.remove('drop')
+      const matchedFlavors = matchingFlavors(flavors, target)
+      target.drop(
+        getTransferable(el, options, matchedFlavors),
+        matchedFlavors,
+        targetIndex,
+        el
+      )
 
-          originalParent.insertBefore(el, next)
+      detachNode(placeholder)
+      placeholder = null
+      target = null
+    }
 
-          el.classList.remove('dragged')
-          el.setAttribute('style', '')
-        }
+    const abortDrag = () => {
+      if (keepSource) {
+        detachNode(dragged)
+      } else if (originalParent) {
+        if (hasTransferableImage(el)) { detachNode(dragged) }
+
+        const next = originalParent.children[originalIndex]
+
+        originalParent.insertBefore(el, next)
+
+        el.classList.remove('dragged')
+        el.setAttribute('style', '')
       }
     }
 
@@ -173,40 +177,58 @@ widgets.define('drag-source', (options) => {
       if (lockInParent) { adjustInParent(dragged, lockInParent) }
     }
 
-    return new DisposableEvent(grip, 'mousedown', (e) => {
-      e.stopImmediatePropagation()
-      e.stopPropagation()
-      e.preventDefault()
+    return new CompositeDisposable([
+      new DisposableEvent(grip, 'mousedown', (e) => {
+        e.stopImmediatePropagation()
+        e.stopPropagation()
+        e.preventDefault()
 
-      const start = {x: e.pageX, y: e.pageY}
+        const start = {x: e.pageX, y: e.pageY}
 
-      windowSubscriptions = new CompositeDisposable([
-        new DisposableEvent(dragContainer.defaultView, 'mouseup', (e) => {
-          e.stopImmediatePropagation()
-          if (dragging) {
-            stopDrag(e)
-            dragging = false
-          }
+        windowSubscriptions = new CompositeDisposable([
+          new DisposableEvent(dragContainer.defaultView, 'mouseup', (e) => {
+            e.stopImmediatePropagation()
+            if (dragging) {
+              endDrag(e)
+              dragging = false
+            }
 
-          windowSubscriptions.dispose()
-          potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
-        }),
-        new DisposableEvent(dragContainer.defaultView, 'mousemove', (e) => {
-          e.stopImmediatePropagation()
-          if (!dragging) {
-            let difX = e.pageX - start.x
-            let difY = e.pageY - start.y
+            windowSubscriptions.dispose()
+            potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
+            potentialTargetSubscription && potentialTargetSubscription.dispose()
 
-            if (Math.abs(Math.sqrt((difX * difX) + (difY * difY))) > dragThreshold) {
-              startDrag(e)
+            windowSubscriptions = null
+            potentialTargetsSubscriptions = null
+            potentialTargetSubscription = null
+          }),
+          new DisposableEvent(dragContainer.defaultView, 'mousemove', (e) => {
+            e.stopImmediatePropagation()
+            if (!dragging) {
+              let difX = e.pageX - start.x
+              let difY = e.pageY - start.y
+
+              if (Math.abs(Math.sqrt((difX * difX) + (difY * difY))) > dragThreshold) {
+                startDrag(e)
+                drag(e)
+              }
+            } else {
               drag(e)
             }
-          } else {
-            drag(e)
-          }
-        })
-      ])
-    })
+          })
+        ])
+      }),
+      new Disposable(() => {
+        abortDrag()
+
+        windowSubscriptions && windowSubscriptions.dispose()
+        potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
+        potentialTargetSubscription && potentialTargetSubscription.dispose()
+
+        windowSubscriptions = null
+        potentialTargetsSubscriptions = null
+        potentialTargetSubscription = null
+      })
+    ])
   }
 })
 

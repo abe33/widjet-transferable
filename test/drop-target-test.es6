@@ -2,6 +2,7 @@ import expect from 'expect.js'
 import sinon from 'sinon'
 import jsdom from 'mocha-jsdom'
 import widgets from 'widjet'
+import {setPageContent, getTestRoot} from 'widjet-test-utils/dom'
 
 import '../src/index'
 
@@ -10,7 +11,7 @@ describe('drop targets', () => {
 
   describe('without a ondrop method defined', () => {
     beforeEach(() => {
-      document.body.innerHTML = '<div data-drop></div>'
+      setPageContent('<div data-drop></div>')
     })
 
     it('raises an exception', () => {
@@ -22,7 +23,7 @@ describe('drop targets', () => {
 
   describe('with an undefined ondrop method', () => {
     beforeEach(() => {
-      document.body.innerHTML = '<div data-drop data-ondrop="foo"></div>'
+      setPageContent('<div data-drop data-ondrop="foo"></div>')
     })
 
     it('raises an exception', () => {
@@ -36,7 +37,7 @@ describe('drop targets', () => {
     let handler
 
     beforeEach(() => {
-      document.body.innerHTML = '<div data-drop data-ondrop="handler"></div>'
+      setPageContent('<div data-drop data-ondrop="handler"></div>')
 
       handler = sinon.spy()
     })
@@ -44,7 +45,7 @@ describe('drop targets', () => {
     it('creates a method on the element that calls that handler', () => {
       widgets('drop-target', '[data-drop]', {on: 'init', handler})
 
-      const element = document.querySelector('[data-drop]')
+      const element = getTestRoot().querySelector('[data-drop]')
 
       element.drop()
 
