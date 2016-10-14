@@ -353,7 +353,7 @@ describe('drag source', () => {
           ondrop: 'handler',
           flavors: '{foo},{bar}'
         }, {
-          transferable: 'function:getTransferable',
+          transferable: 'getTransferable',
           flavors: '{bar},{baz}'
         }, {
           extraDragOptions: {getTransferable: transferableFunction}
@@ -744,8 +744,8 @@ describe('drag source', () => {
         dragOver(dropTarget)
       })
 
-      it('clones the provided image source', () => {
-        expect(getPlaceholder().innerHTML).to.eql('<div data-transferable="foo" data-dnd-placeholder="clone" class="drag-source-handled">content</div>')
+      it('clones the drag source', () => {
+        expect(getPlaceholder().innerHTML).to.eql('<div data-transferable="foo" data-dnd-placeholder="clone" class="" style="">content</div>')
       })
     })
 
@@ -792,7 +792,7 @@ describe('drag source', () => {
         }, {
           transferable: 'foo',
           flavors: '{baz},{bar}',
-          'dnd-placeholder': 'function:placeholderHandle'
+          'dnd-placeholder': 'placeholderHandle'
         }, {
           extraMarkup: '<div class="source"></div>',
           extraDragOptions: {placeholderHandle}
@@ -813,7 +813,7 @@ describe('drag source', () => {
               ondrop: 'handler'
             }, {
               transferable: 'foo',
-              'dnd-placeholder': 'function:placeholderHandle'
+              'dnd-placeholder': 'placeholderHandle'
             })
           }).to.throwError()
         })
@@ -828,7 +828,7 @@ describe('drag source', () => {
       beforeEach(() => {
         buildDragContext({
           ondrop: 'handler',
-          content: '<div class="block"></div><div class="block"></div>'
+          content: '<div class="block" id="b1"></div><div class="block" id="b2"></div>'
         }, {
           transferable: 'foo'
         })
@@ -881,6 +881,25 @@ describe('drag source', () => {
 
           drag(dropTarget, {x: 50, y: 260})
           expect(nodeIndex(getPlaceholder())).to.eql(2)
+        })
+      })
+
+      describe('when the container is empty', () => {
+        beforeEach(() => {
+          buildDragContext({
+            ondrop: 'handler',
+            content: ''
+          }, {
+            transferable: 'foo'
+          })
+
+          startDrag(dragSource)
+        })
+
+        it('appends the placeholder at the end', () => {
+          dragOver(dropTarget)
+
+          expect(nodeIndex(getPlaceholder())).to.eql(0)
         })
       })
     })

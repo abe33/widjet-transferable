@@ -38,6 +38,8 @@ widgets.define('drag-source', (options) => {
   const filterChildren = legitChildrenFilter(options)
 
   return (el) => {
+    checkPlaceholder(el, options)
+
     const flavors = getFlavors(el)
     const targetSelector = flavors.some(isAnyFlavor)
       ? dropSelector
@@ -51,7 +53,6 @@ widgets.define('drag-source', (options) => {
     const lockInParent = el.hasAttribute('data-lock-in-parent') &&
                          parent(el, el.getAttribute('data-lock-in-parent'))
     const grip = gripSelector ? el.querySelector(gripSelector) : el
-    const placeholderContent = getPlaceholderContent(el, options)
 
     const startDrag = (e) => {
       originalPos = el.getBoundingClientRect()
@@ -78,11 +79,7 @@ widgets.define('drag-source', (options) => {
         potentialTarget.classList.add('accept-drop')
 
         potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseover', (e) => {
-          const content = typeof placeholderContent === 'function'
-            ? placeholderContent(el, potentialTarget, matchingFlavors(flavors, potentialTarget))
-            : placeholderContent
-
-          placeholder = getPlaceholder(content, options)
+          placeholder = getPlaceholder(el, potentialTarget, options)
 
           potentialTarget.classList.add('drop')
           potentialTarget.appendChild(placeholder)
@@ -177,6 +174,16 @@ widgets.define('drag-source', (options) => {
       if (lockInParent) { adjustInParent(dragged, lockInParent) }
     }
 
+    const clearAllSubscriptions = () => {
+      windowSubscriptions && windowSubscriptions.dispose()
+      potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
+      potentialTargetSubscription && potentialTargetSubscription.dispose()
+
+      windowSubscriptions = null
+      potentialTargetsSubscriptions = null
+      potentialTargetSubscription = null
+    }
+
     return new CompositeDisposable([
       new DisposableEvent(grip, 'mousedown', (e) => {
         e.stopImmediatePropagation()
@@ -193,13 +200,7 @@ widgets.define('drag-source', (options) => {
               dragging = false
             }
 
-            windowSubscriptions.dispose()
-            potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
-            potentialTargetSubscription && potentialTargetSubscription.dispose()
-
-            windowSubscriptions = null
-            potentialTargetsSubscriptions = null
-            potentialTargetSubscription = null
+            clearAllSubscriptions()
           }),
           new DisposableEvent(dragContainer.defaultView, 'mousemove', (e) => {
             e.stopImmediatePropagation()
@@ -219,14 +220,7 @@ widgets.define('drag-source', (options) => {
       }),
       new Disposable(() => {
         abortDrag()
-
-        windowSubscriptions && windowSubscriptions.dispose()
-        potentialTargetsSubscriptions && potentialTargetsSubscriptions.dispose()
-        potentialTargetSubscription && potentialTargetSubscription.dispose()
-
-        windowSubscriptions = null
-        potentialTargetsSubscriptions = null
-        potentialTargetSubscription = null
+        clearAllSubscriptions()
       })
     ])
   }
@@ -235,15 +229,10 @@ widgets.define('drag-source', (options) => {
 function getTransferable (source, options, flavors) {
   const transferableSource = options.transferableSource || 'data-transferable'
   const transferable = source.getAttribute(transferableSource)
-
-  if (transferable && transferable.indexOf('function:') === 0) {
-    const transferableFunction = options[transferable.split(':')[1]]
-    return typeof transferableFunction === 'function'
-    ? transferableFunction(source, flavors)
-    : null
-  } else {
-    return transferable
-  }
+  const transferableFunction = options[transferable]
+  return typeof transferableFunction === 'function'
+  ? transferableFunction(source, flavors)
+  : transferable
 }
 
 function getFlavors (source) {
@@ -258,43 +247,49 @@ function matchingFlavors (flavors, target) {
     : flavors.filter(f => dropFlavor.indexOf(f) !== -1)
 }
 
-function getPlaceholder (content, options) {
+function getPlaceholder (el, potentialTarget, options) {
+  const flavors = getFlavors(el)
+  const placeholderContent = getPlaceholderContent(el, options)
+  const content = typeof placeholderContent === 'function'
+    ? placeholderContent(el, potentialTarget, matchingFlavors(flavors, potentialTarget))
+    : placeholderContent
+
   const cls = options.placeholderClass || PLACEHOLDER_CLASS
   return getNode(`<div class='${cls}'>${content}</div>`)
 }
 
 function getPlaceholderContent (dragSource, options) {
-  const dndPlaceholder = dragSource.getAttribute('data-dnd-placeholder')
+  const placeholder = dragSource.getAttribute('data-dnd-placeholder')
 
-  if (dndPlaceholder) {
-    if (dndPlaceholder === 'clone') {
-      return dragSource.outerHTML
-    } else if (dndPlaceholder.indexOf('function:') === 0) {
-      return placeholderFromFunction(dndPlaceholder, options)
+  if (placeholder) {
+    if (placeholder === 'clone') {
+      return cleanDragAttribtues(cloneNode(dragSource)).outerHTML
     } else {
-      return placeholderFromSelector(dndPlaceholder, options)
+      return getCustomPlaceholder(placeholder, options)
     }
   }
   return ''
 }
 
-function placeholderFromFunction (dndPlaceholder, options) {
-  const placeholderFunctionName = dndPlaceholder.split(':')[1]
-  const placeholderFunction = options[placeholderFunctionName]
-  if (placeholderFunction) {
-    return placeholderFunction
-  } else {
-    throw new Error(`Unable to find a function named '${placeholderFunctionName}' on options to use as source for the placeholder`)
+function checkPlaceholder (dragSource, options) {
+  const placeholder = dragSource.getAttribute('data-dnd-placeholder')
+  if (placeholder && placeholder !== 'clone' && !getCustomPlaceholder(placeholder, options)) {
+    throw new Error(`Unable to find a placeholder provider using '${placeholder}' in neither the options nor the DOM`)
   }
 }
 
-function placeholderFromSelector (dndPlaceholder, options) {
-  const placeholderElement = document.querySelector(dndPlaceholder)
-  if (placeholderElement) {
-    return placeholderElement.outerHTML
-  } else {
-    throw new Error(`Unable to find an element matching the selector '${dndPlaceholder}' as source for the placeholder`)
-  }
+function getCustomPlaceholder (dndPlaceholder, options) {
+  return options[dndPlaceholder] ||
+  (document.querySelector(dndPlaceholder) && document.querySelector(dndPlaceholder).outerHTML)
+}
+
+function cleanDragAttribtues (node) {
+  node.classList.remove('dragged')
+  node.classList.remove('drag-source-handled')
+  node.style.position = ''
+  node.style.top = ''
+  node.style.left = ''
+  return node
 }
 
 function hasTransferableImage (source) {
@@ -379,7 +374,7 @@ function positionFinder ({target, horizontalDrag, placeholder}) {
           target.insertBefore(placeholder, nextChild)
           return true
         }
-      } else if (!nextChild && shouldInsertAtEnd) {
+      } else {
         target.appendChild(placeholder)
       }
     }
