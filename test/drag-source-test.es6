@@ -74,9 +74,9 @@ describe('drag source', () => {
         const length = this.children.length
 
         if (mode === 'horizontal') {
-          return getBox(0, 0, length * width, height)
+          return getBox(0, 0, Math.max(1, length) * width, height)
         } else {
-          return getBox(0, 0, width, length * height)
+          return getBox(0, 0, width, Math.max(1, length) * height)
         }
       }
     })
@@ -89,11 +89,11 @@ describe('drag source', () => {
     dragged = document.body.querySelector('.dragged')
   }
 
-  function dragOver (target, offsets = {}) {
+  function dragOver (target, position = {}) {
     const center = objectCenterCoordinates(target)
     const coords = {
-      x: offsets.x != null ? offsets.x : center.x,
-      y: offsets.y != null ? offsets.y : center.y
+      x: position.x != null ? position.x : center.x,
+      y: position.y != null ? position.y : center.y
     }
 
     mousemove(dragged, coords)
@@ -101,11 +101,11 @@ describe('drag source', () => {
     mousemove(target, coords)
   }
 
-  function drag (target, offsets = {}) {
+  function drag (target, position = {}) {
     const center = objectCenterCoordinates(target)
     const coords = {
-      x: offsets.x != null ? offsets.x : center.x,
-      y: offsets.y != null ? offsets.y : center.y
+      x: position.x != null ? position.x : center.x,
+      y: position.y != null ? position.y : center.y
     }
 
     mousemove(dragged, coords)
@@ -883,24 +883,24 @@ describe('drag source', () => {
           expect(nodeIndex(getPlaceholder())).to.eql(2)
         })
       })
+    })
 
-      describe('when the container is empty', () => {
-        beforeEach(() => {
-          buildDragContext({
-            ondrop: 'handler',
-            content: ''
-          }, {
-            transferable: 'foo'
-          })
+    describe('when the container is empty', () => {
+      withFakeBoundingClientRects('vertical')
 
-          startDrag(dragSource)
+      beforeEach(() => {
+        buildDragContext({
+          ondrop: 'handler'
+        }, {
+          transferable: 'foo'
         })
 
-        it('appends the placeholder at the end', () => {
-          dragOver(dropTarget)
+        startDrag(dragSource)
+        dragOver(dropTarget)
+      })
 
-          expect(nodeIndex(getPlaceholder())).to.eql(0)
-        })
+      it('appends the placeholder at the end', () => {
+        expect(nodeIndex(getPlaceholder())).to.eql(0)
       })
     })
 

@@ -289,6 +289,8 @@ function cleanDragAttribtues (node) {
   node.style.position = ''
   node.style.top = ''
   node.style.left = ''
+  node.style.width = ''
+  node.style.height = ''
   return node
 }
 
@@ -347,10 +349,6 @@ function positionFinder ({target, horizontalDrag, placeholder}) {
       const shouldInsertBefore = horizontalDrag
       ? pageX < childHalfWidth
       : pageY < childHalfHeight
-
-      const shouldInsertAtEnd = horizontalDrag
-      ? pageX >= childHalfWidth
-      : pageY >= childHalfHeight
 
       if (shouldInsertBefore) {
         target.insertBefore(placeholder, child)
