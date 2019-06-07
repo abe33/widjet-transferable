@@ -59,7 +59,7 @@ describe('drag source', () => {
           const top = parseInt(this.style.top, 10);
           const left = parseInt(this.style.left, 10);
 
-          return getBox(top, left, width, height);
+          return getBox(left, top, width, height);
         } else {
           return getBox(0, 0, width, height);
         }
@@ -67,9 +67,9 @@ describe('drag source', () => {
         const index = nodeIndex(this);
 
         if (mode === 'horizontal') {
-          return getBox(0, index * width, width, height);
+          return getBox(index * width, 0, width, height);
         } else {
-          return getBox(index * height, 0, width, height);
+          return getBox(0, index * height, width, height);
         }
       } else if (this.classList.contains('container')) {
         return getBox(0, 0, 300, 300);
@@ -748,7 +748,9 @@ describe('drag source', () => {
       });
 
       it('clones the drag source', () => {
-        expect(getPlaceholder().innerHTML).to.eql('<div data-transferable="foo" data-dnd-placeholder="clone" class="" style="">content</div>');
+        expect(getPlaceholder().innerHTML)
+          .to.eql(
+            '<div data-transferable="foo" data-dnd-placeholder="clone" class="" style="">content</div>');
       });
     });
 

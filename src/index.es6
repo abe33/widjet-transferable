@@ -375,7 +375,7 @@ function positionFinder({target, horizontalDrag, placeholder}) {
       } else {
         target.appendChild(placeholder);
       }
-      return false;
+      return null;
     };
   };
 }
