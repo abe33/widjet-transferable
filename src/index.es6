@@ -324,11 +324,15 @@ function getDraggedElement(source, container) {
 }
 
 function legitChildrenFilter(o) {
-  const cls = o.placeholderClass || PLACEHOLDER_CLASS;
-  const classes = [`.${cls}`].concat(o.excludedChildrenClasses || []);
+  const cls = selectorFromClass(o.placeholderClass || PLACEHOLDER_CLASS);
+  const classes = [cls].concat(o.excludedChildrenClasses || []);
   const sel = classes.map(c => `:not(${c})`).join('');
 
   return children => asArray(children).filter(child => child.matches(sel));
+}
+
+function selectorFromClass(cls) {
+  return cls.split(/\s+/g).map(s => `.${s}`).join('');
 }
 
 function positionFinder({target, horizontalDrag, placeholder}) {
