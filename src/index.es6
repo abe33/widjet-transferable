@@ -174,6 +174,10 @@ widgets.define('drag-source', (options) => {
     const drag = (e) => {
       let {pageX: x, pageY: y} = e;
 
+      const dragContainerBounds = currentDragContainer.getBoundingClientRect();
+      x -= dragContainerBounds.left;
+      y -= dragContainerBounds.top;
+
       if (!noDragOffset) {
         x += dragOffset.x;
         y += dragOffset.y;
