@@ -33,6 +33,7 @@ widgets.define('drag-source', (options) => {
   const dropSelector = options.dropSelector || '[data-drop]';
   const dropContainer = options.dropContainer || document;
   const dragContainer = options.dragContainer || document;
+  const dragParent = options.dragParent;
   const dragThreshold = options.dragThreshold || 10;
 
   const filterChildren = legitChildrenFilter(options);
@@ -54,6 +55,12 @@ widgets.define('drag-source', (options) => {
                          parent(el, el.getAttribute('data-lock-in-parent'));
     const grip = gripSelector ? el.querySelector(gripSelector) : el;
 
+    const getDragContainer = (el) => {
+      return dragParent
+        ? parent(el, dragParent)
+        : dragContainer.body;
+    };
+
     const startDrag = (e) => {
       originalPos = el.getBoundingClientRect();
       originalParent = el.parentNode;
@@ -68,8 +75,8 @@ widgets.define('drag-source', (options) => {
 
       if (!keepSource) { detachNode(el); }
 
-      dragContainer.body.appendChild(dragged);
-      dragContainer.body.classList.add('dragging');
+      getDragContainer(el).appendChild(dragged);
+      getDragContainer(el).classList.add('dragging');
 
       potentialTargets = asArray(dropContainer.querySelectorAll(targetSelector));
 
@@ -115,7 +122,7 @@ widgets.define('drag-source', (options) => {
     };
 
     const endDrag = (e) => {
-      dragContainer.body.classList.remove('dragging');
+      getDragContainer(target).classList.remove('dragging');
       potentialTargets.forEach(n => n.classList.remove('accept-drop'));
 
       target != null ? performDrop(target) : abortDrag();
