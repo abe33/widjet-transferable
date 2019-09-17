@@ -61,6 +61,8 @@ widgets.define('drag-source', (options) => {
         : dragContainer.body;
     };
 
+    let currentDragContainer;
+
     const startDrag = (e) => {
       originalPos = el.getBoundingClientRect();
       originalParent = el.parentNode;
@@ -73,10 +75,12 @@ widgets.define('drag-source', (options) => {
         y: originalPos.top - e.pageY,
       };
 
+      currentDragContainer = getDragContainer(el);
+
       if (!keepSource) { detachNode(el); }
 
-      getDragContainer(el).appendChild(dragged);
-      getDragContainer(el).classList.add('dragging');
+      currentDragContainer.appendChild(dragged);
+      currentDragContainer.classList.add('dragging');
 
       potentialTargets = asArray(dropContainer.querySelectorAll(targetSelector));
 
@@ -122,7 +126,7 @@ widgets.define('drag-source', (options) => {
     };
 
     const endDrag = (e) => {
-      getDragContainer(target).classList.remove('dragging');
+      currentDragContainer.classList.remove('dragging');
       potentialTargets.forEach(n => n.classList.remove('accept-drop'));
 
       target != null ? performDrop(target) : abortDrag();
