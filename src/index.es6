@@ -144,12 +144,16 @@ widgets.define('drag-source', (options) => {
 
       target.classList.remove('drop');
       const matchedFlavors = matchingFlavors(flavors, target);
-      target.drop(
-        getTransferable(el, options, matchedFlavors),
-        matchedFlavors,
-        targetIndex,
-        el
-      );
+
+      target.drop({
+        transferable: getTransferable(el, options, matchedFlavors),
+        flavors: matchedFlavors,
+        fromIndex: originalIndex,
+        fromTarget: originalParent,
+        toIndex: targetIndex,
+        toTarget: target,
+        source: el,
+      });
 
       detachNode(placeholder);
       placeholder = null;

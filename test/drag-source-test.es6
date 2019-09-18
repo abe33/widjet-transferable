@@ -369,7 +369,15 @@ describe('drag source', () => {
         drop();
 
         expect(transferableFunction.calledWith(dragSource, ['{bar}'])).to.be.ok();
-        expect(handler.calledWith(undefined, ['{bar}'], 0, dragSource)).to.be.ok();
+        expect(handler.calledWith({
+          transferable: undefined,
+          flavors: ['{bar}'],
+          fromIndex: 1,
+          fromTarget: container,
+          toIndex: 0,
+          toTarget: dropTarget,
+          source: dragSource,
+        })).to.be.ok();
       });
     });
 
@@ -388,7 +396,15 @@ describe('drag source', () => {
         dragOver(dropTarget);
         drop();
 
-        expect(handler.calledWith(null, ['{all}'], 0, dragSource)).to.be.ok();
+        expect(handler.calledWith({
+          transferable: null,
+          flavors: ['{all}'],
+          fromIndex: 1,
+          fromTarget: container,
+          toIndex: 0,
+          toTarget: dropTarget,
+          source: dragSource,
+        })).to.be.ok();
       });
     });
 
@@ -409,7 +425,15 @@ describe('drag source', () => {
         dragOver(dropTarget);
         drop();
 
-        expect(handler.calledWith('foo', ['{all}'], 0, dragSource)).to.be.ok();
+        expect(handler.calledWith({
+          transferable: 'foo',
+          flavors: ['{all}'],
+          fromIndex: 1,
+          fromTarget: container,
+          toIndex: 0,
+          toTarget: dropTarget,
+          source: dragSource,
+        })).to.be.ok();
       });
     });
   });
