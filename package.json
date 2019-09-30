@@ -1,6 +1,6 @@
 {
   "name": "widjet-transferable",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "A drag and drop widget for widjet",
   "main": "lib/index.js",
   "jsnext:main": "src/index.es6",
