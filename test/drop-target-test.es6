@@ -9,7 +9,7 @@ import '../src/index';
 describe('drop targets', () => {
   jsdom({url: 'http://localhost'});
 
-  describe('without a ondrop method defined', () => {
+  describe('without a handler method defined', () => {
     beforeEach(() => {
       setPageContent('<div data-drop></div>');
     });
@@ -24,6 +24,18 @@ describe('drop targets', () => {
   describe('with an undefined ondrop method', () => {
     beforeEach(() => {
       setPageContent('<div data-drop data-ondrop="foo"></div>');
+    });
+
+    it('raises an exception', () => {
+      expect(() => {
+        widgets('drop-target', '[data-drop]', {on: 'init'});
+      }).to.throwError();
+    });
+  });
+
+  describe('with an undefined onhover method', () => {
+    beforeEach(() => {
+      setPageContent('<div data-drop data-onhover="foo"></div>');
     });
 
     it('raises an exception', () => {
@@ -48,6 +60,26 @@ describe('drop targets', () => {
       const element = getTestRoot().querySelector('[data-drop]');
 
       element.drop();
+
+      expect(handler.called).to.be.ok();
+    });
+  });
+
+  describe('with a defined onhover method', () => {
+    let handler;
+
+    beforeEach(() => {
+      setPageContent('<div data-drop data-onhover="handler"></div>');
+
+      handler = sinon.spy();
+    });
+
+    it('creates a method on the element that calls that handler', () => {
+      widgets('drop-target', '[data-drop]', {on: 'init', handler});
+
+      const element = getTestRoot().querySelector('[data-drop]');
+
+      element.hover();
 
       expect(handler.called).to.be.ok();
     });

@@ -381,6 +381,26 @@ describe('drag source', () => {
       });
     });
 
+    describe('with a custom hover function', () => {
+      beforeEach(() => {
+        buildDragContext({
+          onhover: 'handler',
+          flavors: '{foo},{bar}',
+        }, {
+          transferable: 'getTransferable',
+          flavors: '{bar},{baz}',
+        });
+      });
+
+      it('calls the specified function when hovering the target', () => {
+        startDrag(dragSource);
+        dragOver(dropTarget);
+
+        expect(handler.calledWith(dragSource, dropTarget))
+          .to.be.ok();
+      });
+    });
+
     describe('with no transferable data', () => {
       beforeEach(() => {
         buildDragContext({

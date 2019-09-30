@@ -1,5 +1,5 @@
 import widgets from 'widjet';
-import {asArray, cloneNode, getNode, nodeIndex, detachNode, parent} from 'widjet-utils';
+import {asArray, asPair, cloneNode, getNode, nodeIndex, detachNode, parent} from 'widjet-utils';
 import {CompositeDisposable, DisposableEvent, Disposable} from 'widjet-disposables';
 
 const PLACEHOLDER_CLASS = 'dnd-placeholder';
@@ -7,13 +7,26 @@ const ANY_FLAVOR = '{all}';
 const isAnyFlavor = f => f === ANY_FLAVOR;
 
 widgets.define('drop-target', (options) => (el) => {
-  const handler = options[el.getAttribute('data-ondrop')];
+  let handlerDefined = false;
+  asPair({
+    ondrop: 'drop',
+    onhover: 'hover',
+  }).forEach(([attr, method]) => {
+    if (el.hasAttribute(`data-${attr}`)) {
+      const handler = options[el.getAttribute(`data-${attr}`)];
 
-  if (!handler) {
-    throw new Error('Cannot create a drop target without a ondrop function');
+      if (handler) {
+        handlerDefined = true;
+        el[method] = (...args) => { handler.call(el, ...args); };
+      } else {
+        throw new Error(`A ${method} handler is defined but can't be found.`);
+      }
+    }
+  });
+
+  if (!handlerDefined) {
+    throw new Error('Cannot create a drop target without a proper drop or hover handler function');
   }
-
-  el.drop = (...args) => { handler.call(el, ...args); };
 });
 
 widgets.define('drag-source', (options) => {
@@ -82,47 +95,14 @@ widgets.define('drag-source', (options) => {
       currentDragContainer.appendChild(dragged);
       currentDragContainer.classList.add('dragging');
 
-      potentialTargets = asArray(dropContainer.querySelectorAll(targetSelector));
 
       potentialTargetsSubscriptions = new CompositeDisposable();
+      refreshPotentialTargets();
+    };
 
-      potentialTargets.forEach((potentialTarget) => {
-        potentialTarget.classList.add('accept-drop');
-
-        potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseover', (e) => {
-          placeholder = getPlaceholder(el, potentialTarget, options);
-
-          potentialTarget.classList.add('drop');
-          potentialTarget.appendChild(placeholder);
-
-          const findPosition = positionFinder({
-            placeholder,
-            horizontalDrag: potentialTarget.hasAttribute('data-horizontal-drag'),
-            target: potentialTarget,
-          });
-
-          potentialTargetSubscription = new CompositeDisposable([
-            new DisposableEvent(potentialTarget, 'mousemove', (e) => {
-              let {pageY: y, pageX: x} = e;
-
-              y -= dropContainer.defaultView.scrollY;
-              x -= dropContainer.defaultView.scrollX;
-              target = potentialTarget;
-
-              filterChildren(target.children).some(findPosition(x, y));
-            }),
-
-            new DisposableEvent(potentialTarget, 'mouseout', (e) => {
-              detachNode(placeholder);
-              potentialTarget.classList.remove('drop');
-              potentialTargetSubscription.dispose();
-              target = null;
-              placeholder = null;
-              potentialTargetSubscription = null;
-            }),
-          ]);
-        }));
-      });
+    const refreshPotentialTargets = () => {
+      potentialTargets = asArray(dropContainer.querySelectorAll(targetSelector));
+      potentialTargets.forEach(setAsPotentialTarget);
     };
 
     const endDrag = (e) => {
@@ -242,6 +222,51 @@ widgets.define('drag-source', (options) => {
         clearAllSubscriptions();
       }),
     ]);
+
+    function setAsPotentialTarget(potentialTarget) {
+      potentialTarget.classList.add('accept-drop');
+
+      potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseover', (e) => {
+
+        if (potentialTarget.hover) {
+          potentialTarget.hover(el, potentialTarget, refreshPotentialTargets, e);
+        } else {
+          placeholder = getPlaceholder(el, potentialTarget, options);
+
+          potentialTarget.classList.add('drop');
+          potentialTarget.appendChild(placeholder);
+
+          const findPosition = positionFinder({
+            placeholder,
+            horizontalDrag: potentialTarget.hasAttribute('data-horizontal-drag'),
+            target: potentialTarget,
+          });
+
+          potentialTargetSubscription = new CompositeDisposable([
+            new DisposableEvent(potentialTarget, 'mousemove', (e) => {
+              let {pageY: y, pageX: x} = e;
+
+              y -= dropContainer.defaultView.scrollY;
+              x -= dropContainer.defaultView.scrollX;
+              target = potentialTarget;
+
+              filterChildren(target.children).some(findPosition(x, y));
+            }),
+
+            new DisposableEvent(potentialTarget, 'mouseout', (e) => {
+              detachNode(placeholder);
+              potentialTarget.classList.remove('drop');
+              potentialTargetSubscription.dispose();
+              target = null;
+              placeholder = null;
+              potentialTargetSubscription = null;
+            }),
+          ]);
+        }
+
+      }));
+    }
+
   };
 });
 
