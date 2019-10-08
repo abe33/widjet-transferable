@@ -10,7 +10,8 @@ widgets.define('drop-target', (options) => (el) => {
   let handlerDefined = false;
   asPair({
     ondrop: 'drop',
-    onhover: 'hover',
+    onenter: 'enter',
+    onleave: 'leave',
   }).forEach(([attr, method]) => {
     if (el.hasAttribute(`data-${attr}`)) {
       const handler = options[el.getAttribute(`data-${attr}`)];
@@ -227,9 +228,14 @@ widgets.define('drag-source', (options) => {
       potentialTarget.classList.add('accept-drop');
 
       potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseover', (e) => {
+        if (potentialTarget.leave) {
+          potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseout', (e) => {
+            potentialTarget.leave(el, potentialTarget, refreshPotentialTargets, e);
+          }));
+        }
 
-        if (potentialTarget.hover) {
-          potentialTarget.hover(el, potentialTarget, refreshPotentialTargets, e);
+        if (potentialTarget.enter) {
+          potentialTarget.enter(el, potentialTarget, refreshPotentialTargets, e);
         } else {
           placeholder = getPlaceholder(el, potentialTarget, options);
 

@@ -381,10 +381,10 @@ describe('drag source', () => {
       });
     });
 
-    describe('with a custom hover function', () => {
+    describe('with a custom enter function', () => {
       beforeEach(() => {
         buildDragContext({
-          onhover: 'handler',
+          onenter: 'handler',
           flavors: '{foo},{bar}',
         }, {
           transferable: 'getTransferable',
@@ -392,9 +392,30 @@ describe('drag source', () => {
         });
       });
 
-      it('calls the specified function when hovering the target', () => {
+      it('calls the specified function when entering the target', () => {
         startDrag(dragSource);
         dragOver(dropTarget);
+
+        expect(handler.calledWith(dragSource, dropTarget))
+          .to.be.ok();
+      });
+    });
+
+    describe('with a custom leave function', () => {
+      beforeEach(() => {
+        buildDragContext({
+          onleave: 'handler',
+          flavors: '{foo},{bar}',
+        }, {
+          transferable: 'getTransferable',
+          flavors: '{bar},{baz}',
+        });
+      });
+
+      it('calls the specified function when leaving the target', () => {
+        startDrag(dragSource);
+        dragOver(dropTarget);
+        dragOut(dropTarget);
 
         expect(handler.calledWith(dragSource, dropTarget))
           .to.be.ok();
