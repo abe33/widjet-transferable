@@ -255,7 +255,7 @@ widgets.define('drag-source', (options) => {
 
               y -= dropContainer.defaultView.scrollY;
               x -= dropContainer.defaultView.scrollX;
-              target = potentialTargetDropNode;
+              target = potentialTarget;
 
               filterChildren(target.children).some(findPosition(x, y));
             }),
