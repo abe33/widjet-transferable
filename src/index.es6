@@ -226,10 +226,11 @@ widgets.define('drag-source', (options) => {
 
     function setAsPotentialTarget(potentialTarget) {
       potentialTarget.classList.add('accept-drop');
+      const potentialTargetDropNode = getPotentialTargetDropNode(potentialTarget);
 
-      potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseover', (e) => {
+      potentialTargetsSubscriptions.add(new DisposableEvent(potentialTargetDropNode, 'mouseover', (e) => {
         if (potentialTarget.leave) {
-          potentialTargetsSubscriptions.add(new DisposableEvent(potentialTarget, 'mouseout', (e) => {
+          potentialTargetsSubscriptions.add(new DisposableEvent(potentialTargetDropNode, 'mouseout', (e) => {
             potentialTarget.leave(el, potentialTarget, refreshPotentialTargets, e);
           }));
         }
@@ -240,26 +241,26 @@ widgets.define('drag-source', (options) => {
           placeholder = getPlaceholder(el, potentialTarget, options);
 
           potentialTarget.classList.add('drop');
-          potentialTarget.appendChild(placeholder);
+          potentialTargetDropNode.appendChild(placeholder);
 
           const findPosition = positionFinder({
             placeholder,
             horizontalDrag: potentialTarget.hasAttribute('data-horizontal-drag'),
-            target: potentialTarget,
+            target: potentialTargetDropNode,
           });
 
           potentialTargetSubscription = new CompositeDisposable([
-            new DisposableEvent(potentialTarget, 'mousemove', (e) => {
+            new DisposableEvent(potentialTargetDropNode, 'mousemove', (e) => {
               let {pageY: y, pageX: x} = e;
 
               y -= dropContainer.defaultView.scrollY;
               x -= dropContainer.defaultView.scrollX;
-              target = potentialTarget;
+              target = potentialTargetDropNode;
 
               filterChildren(target.children).some(findPosition(x, y));
             }),
 
-            new DisposableEvent(potentialTarget, 'mouseout', (e) => {
+            new DisposableEvent(potentialTargetDropNode, 'mouseout', (e) => {
               detachNode(placeholder);
               potentialTarget.classList.remove('drop');
               potentialTargetSubscription.dispose();
@@ -331,6 +332,12 @@ function checkPlaceholder(dragSource, options) {
 function getCustomPlaceholder(dndPlaceholder, options) {
   return options[dndPlaceholder] ||
   (document.querySelector(dndPlaceholder) && document.querySelector(dndPlaceholder).outerHTML);
+}
+
+function getPotentialTargetDropNode(potentialTarget) {
+  return potentialTarget.hasAttribute('data-drop-in-child')
+    ? potentialTarget.querySelector(potentialTarget.dataset.dropInChild)
+    : potentialTarget;
 }
 
 function cleanDragAttribtues(node) {

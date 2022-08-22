@@ -1037,5 +1037,71 @@ describe('drag source', () => {
         });
       });
     });
+
+    describe('in a container with data-drop-in-child attribute', () => {
+      withFakeBoundingClientRects('vertical');
+
+      beforeEach(() => {
+        buildDragContext({
+          ondrop: 'handler',
+          'drop-in-child': '.drop-content',
+          content: '<div class="drop-content"><div class="block" id="b1"></div><div class="block" id="b2"></div></div>',
+        }, {
+          transferable: 'foo',
+        });
+
+        startDrag(dragSource);
+
+        dropTarget = dropTarget.querySelector('.drop-content');
+      });
+
+      describe('when the mouse is above the upper half of the first child', () => {
+        it('inserts the placeholder before the first child', () => {
+          dragOver(dropTarget, {x: 50, y: 10});
+
+          expect(nodeIndex(getPlaceholder())).to.eql(0);
+        });
+      });
+
+      describe('when the mouse is above the lower half of a container child', () => {
+        it('inserts the placeholder after the child', () => {
+          dragOver(dropTarget, {x: 50, y: 60});
+
+          expect(nodeIndex(getPlaceholder())).to.eql(1);
+        });
+      });
+
+      describe('when the mouse is above the upper half of the last child', () => {
+        it('inserts the placeholder before the last child', () => {
+          dragOver(dropTarget, {x: 50, y: 110});
+
+          expect(nodeIndex(getPlaceholder())).to.eql(1);
+        });
+      });
+
+      describe('when the mouse is above the lower half of the last child', () => {
+        it('inserts the placeholder after the last child', () => {
+          dragOver(dropTarget, {x: 50, y: 160});
+
+          expect(nodeIndex(getPlaceholder())).to.eql(2);
+        });
+      });
+
+      describe('when the mouse is above the placeholder', () => {
+        it('does not change the placeholder position', () => {
+          dragOver(dropTarget, {x: 50, y: 60});
+          expect(nodeIndex(getPlaceholder())).to.eql(1);
+
+          drag(dropTarget, {x: 50, y: 110});
+          expect(nodeIndex(getPlaceholder())).to.eql(1);
+
+          drag(dropTarget, {x: 50, y: 210});
+          expect(nodeIndex(getPlaceholder())).to.eql(1);
+
+          drag(dropTarget, {x: 50, y: 260});
+          expect(nodeIndex(getPlaceholder())).to.eql(2);
+        });
+      });
+    });
   });
 });
