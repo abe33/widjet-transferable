@@ -130,7 +130,7 @@ widgets.define('drag-source', (options) => {
         transferable: getTransferable(el, options, matchedFlavors),
         flavors: matchedFlavors,
         fromIndex: originalIndex,
-        fromTarget: originalParent,
+        fromTarget: originalParent.matches(dropSelector) ? originalParent : parent(originalParent, dropSelector),
         toIndex: targetIndex,
         toTarget: target,
         source: el,
