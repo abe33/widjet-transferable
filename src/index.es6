@@ -257,7 +257,7 @@ widgets.define('drag-source', (options) => {
               x -= dropContainer.defaultView.scrollX;
               target = potentialTarget;
 
-              filterChildren(target.children).some(findPosition(x, y));
+              filterChildren(potentialTargetDropNode.children).some(findPosition(x, y));
             }),
 
             new DisposableEvent(potentialTargetDropNode, 'mouseout', (e) => {
